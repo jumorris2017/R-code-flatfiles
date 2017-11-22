@@ -19,7 +19,7 @@ library(PerformanceAnalytics)
 plot_dir <- ("C:/Users/jumorris/Desktop/temp_plots/temp_111417/")
 
 ##plots
-clusdt <- copy(db)
+#clusdt <- copy(db)
 
 #Question 1_1: NUMBER_OF_JOBS
 #subset to vars of interest

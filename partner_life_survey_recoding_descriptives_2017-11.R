@@ -19,8 +19,9 @@ library(Hmisc)
 library(xlsx)
 library(tibble)
 library(janitor)
-library(dplyr)
 library(tidyverse)
+library(dplyr)
+#detach("package:plyr")
 
 ##set seed for clustering
 set.seed(1234)
@@ -95,6 +96,7 @@ oedt[, V1 := NULL]
 oedt <- oedt[,names(oedt)[-(2:8)],with=FALSE]
 #merge in oe data
 db <- left_join(db,oedt,by="RID")
+setDT(db)
 
 
 #convert SPSS date format into R date format
@@ -196,7 +198,7 @@ temp <- db %>% group_by(Store_Role) %>% summarise(
   prev75 = quantile(job_months, probs = prob[3], na.rm = T), 
   prev100 = quantile(job_months, probs = prob[4], na.rm = T)
 )
-db <- left_join(db, temp,by="Store_Role")
+db <- left_join(db, temp, by="Store_Role")
 setDT(db)
 #recode based on quartiles
 db[job_months <= prev25, job_monthsure := 1]
@@ -1147,11 +1149,266 @@ write.xlsx(rmat,file=paste0(plot_dir,"rc_r.xlsx"))
 write.xlsx(pmat,file=paste0(plot_dir,"rc_p.xlsx"))
 
 
+#set plot directory for open-ends
+plot_dir <- ("C:/Users/jumorris/Desktop/temp_plots/open_ends/")
+
+##OPEN-END PLOTS
+
+
+#subset to vars of interest
+db2 <- clusdt[Q1_5_If_More_Hours=="Yes"]
+vars <- c("clustername","Store_Role",
+          "Q1_6_NET_benefits","Q1_6_NET_brand","Q1_6_NET_career","Q1_6_NET_consist",
+          "Q1_6_NET_finstab","Q1_6_NET_flex","Q1_6_NET_workenv","Q1_6_NET_other")
+db2 <- na.omit(db2[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("Benefits",
+                       "Brand reputation",
+                       "Development/career",
+                       "Consistency",
+                       "Financial stability",
+                       "Flexibility", 
+                       "Better/different work environment",
+                       "Other")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que1_6_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 1_6 \n Why would you keep your other job(s)? (Net)"))
+graphics.off()
+
+
+#subset to vars of interest
+db2 <- clusdt[Q2_2_Consistency_Importance=="Very important"|Q2_2_Consistency_Importance=="Somewhat important"]
+vars <- c("clustername","Store_Role",
+          "Q2_3_NET_finstab","Q2_3_NET_healthybal","Q2_3_NET_othresp","Q2_3_NET_planahead",
+          "Q2_3_NET_other")
+db2 <- na.omit(db2[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("To be financially stable",
+                       "To maintain a healthy balance",
+                       "To make it work with other responsibilities",
+                       "To be able to plan ahead/for convenience",
+                       "Other")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que2_3_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 2_3 \n Why is schedule consistency important to you? (Net)"))
+graphics.off()
+
+
+#subset to vars of interest
+vars <- c("clustername","Store_Role",
+          "Q3_3_NET_benefits","Q3_3_NET_brand","Q3_3_NET_compassion","Q3_3_NET_corpresp",
+          "Q3_3_NET_inclusion","Q3_3_NET_personalexp","Q3_3_NET_pplenv")
+db2 <- na.omit(clusdt[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("Benefits",
+                       "Brand and product reputation",
+                       "Care/compassion",
+                       "Corporate responsibility",
+                       "Inclusivity",
+                       "Personal experience",
+                       "People/environment")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que3_3_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 3_3 \n What makes you proud to work at Starbucks? (Net)"))
+graphics.off()
+
+
+#subset to vars of interest
+vars <- c("clustername","Store_Role",
+          "Q3_4_NET_labor","Q3_4_NET_mgmtpolicy","Q3_4_NET_negattitudes","Q3_4_NET_pay",
+          "Q3_4_NET_products","Q3_4_NET_support","Q3_4_NET_welfare",
+          "Q3_4_NET_nothing","Q3_4_NET_other")
+db2 <- na.omit(clusdt[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("Lack of adequate labor",
+                       "Company/management policy",
+                       "Partners' negative attitudes",
+                       "Not competitive in wage/pay",
+                       "Not confident in products",
+                       "Lack of support",
+                       "Partners' welfare",
+                       "Nothing/I love my job",
+                       "Other")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que3_4_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 3_4 \n What, if anything, diminishes your pride in Starbucks? (Net)"))
+graphics.off()
+
+
+#subset to vars of interest
+vars <- c("clustername","Store_Role",
+          "Q5_6_NET_community","Q5_6_NET_creative","Q5_6_NET_fooddrink","Q5_6_NET_frifam",
+          "Q5_6_NET_homeimp","Q5_6_NET_outdoors","Q5_6_NET_relax",
+          "Q5_6_NET_success","Q5_6_NET_other")
+db2 <- na.omit(clusdt[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("Helping community/others",
+                       "Creative outlet",
+                       "Good food/drinks",
+                       "Family/friends/loved ones",
+                       "Home improvement",
+                       "Outdoors",
+                       "Relaxing/recharging",
+                       "Being successful/money",
+                       "Other")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que5_6_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 5_6 \n What things in your life make you the happiest? (Net)"))
+graphics.off()
 
 
 
-
-
+#subset to vars of interest
+vars <- c("clustername","Store_Role",
+          "Q5_9_NET_family","Q5_9_NET_financial","Q5_9_NET_health","Q5_9_NET_healthy",
+          "Q5_9_NET_negemotions","Q5_9_NET_wklifebal","Q5_9_NET_work",
+          "Q5_9_NET_other")
+db2 <- na.omit(clusdt[, vars, with=FALSE])
+#lapply to create percentages
+db2[, nval := .N, by=c("clustername","Store_Role")]
+db2<- db2[, lapply(.SD, mean, na.rm=TRUE), by=c("clustername","Store_Role","nval")]
+#reshape from wide to long
+DT <- melt(db2, id=c("clustername","Store_Role","nval"))
+#plyr::mapvalues to question name
+vars_to_match <- unique(DT[,variable])
+new_vec_of_values <- c("Family",
+                       "Financial aspect",
+                       "Health issues and challenges",
+                       "Maintaining a healthy lifestyle",
+                       "Dealing with negative emotions/stress",
+                       "Maintaining work/life balance",
+                       "Work",
+                       "Other")
+DT[, que_name :=  plyr::mapvalues(DT[, variable], from = vars_to_match, to = new_vec_of_values)]
+#plot
+plotlist <- list()
+for(i in vars[-(1:2)]) {
+  plotlist[[i]] <- ggplot(data=DT[variable==i], aes(x = clustername, y = value*100)) +
+    geom_bar(stat="identity", width = 0.7, aes(fill=Store_Role)) + theme_bw() + 
+    ggtitle(DT[variable==i,que_name]) + 
+    scale_y_continuous(limits=c(0,100)) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 2, aes(label=paste0("n=",nval),y=0), stat= "identity", vjust = 1) +
+    geom_text(size = 3, aes(label=paste0(round(value*100,0),"%"),y=value*100), stat= "identity", vjust = -.5) +
+    theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
+          plot.title = element_text(size = 10, face = "bold")) + 
+    labs(x = NULL, y = "% Commented") + scale_fill_discrete(guide=FALSE)
+}
+#create PDF file
+filename <- (paste0(plot_dir, "clust_que5_9_NET.png"))
+png(filename, width = 10, height = 12, units = "in", res = 100)
+do.call("grid.arrange", c(plotlist, top = "Question 5_9 \n What challenges do you face day-to-day? (Net)"))
+graphics.off()
 
 
 
