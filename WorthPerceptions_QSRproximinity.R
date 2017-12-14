@@ -105,51 +105,52 @@ qsr3 <- qsr3[, list(wp_resp_count = sum(wp_resp_count,na.rm=T),
                     miles = mean(miles,na.rm=T)),
              by=c("qsrn_qtile","urbanity")]
 qsr3 <- setorder(qsr3,urbanity,qsrn_qtile)
-# #split by qsr number - without urbanity
-# qsr4 <- qsr[miles<0.1]
-# prob = c(1/4,2/4,3/4,1)
-# temp <- qsr4 %>% summarise( 
-#   qsrn_25 = quantile(qsrn, probs = prob[1], na.rm = T), 
-#   qsrn_50 = quantile(qsrn, probs = prob[2], na.rm = T), 
-#   qsrn_75 = quantile(qsrn, probs = prob[3], na.rm = T), 
-#   qsrn_100 = quantile(qsrn, probs = prob[4], na.rm = T)
-# )
-# qsr4 <- cbind(qsr4, temp)
-# setDT(qsr4)
-# #recode based on quartiles
-# qsr4[qsrn < qsrn_25, qsrn_qtile := 1]
-# qsr4[qsrn >= qsrn_25 & qsrn < qsrn_50, qsrn_qtile := 2]
-# qsr4[qsrn >= qsrn_50 & qsrn < qsrn_75, qsrn_qtile := 3]
-# qsr4[qsrn >= qsrn_75, qsrn_qtile := 4]
-# #summarize
-# qsr4 <- qsr4[, list(wp_resp_count = sum(wp_resp_count,na.rm=T),
-#                     wp_tb_count = sum(wp_tb_count,na.rm=T),
-#                     wp_tb_score = sum(wp_tb_count,na.rm=T)/sum(wp_resp_count,na.rm=T),
-#                     miles = mean(miles,na.rm=T)),
-#              by=c("qsrn_qtile")]
-# qsr4 <- setorder(qsr4,qsrn_qtile)
+
+
+#split by qsr number - tertile
+#qsr3 <- qsr[miles<0.1]
+qsr3 <- qsr[miles<0.2]
+prob = c(1/3,2/3,1)
+temp <- qsr3 %>% group_by(urbanity) %>% summarise( 
+  qsrn_33 = quantile(qsrn, probs = prob[1], na.rm = T), 
+  qsrn_67 = quantile(qsrn, probs = prob[2], na.rm = T), 
+  qsrn_100 = quantile(qsrn, probs = prob[3], na.rm = T)
+)
+qsr3 <- left_join(qsr3, temp,by="urbanity")
+setDT(qsr3)
+#recode based on quartiles
+qsr3[qsrn < qsrn_33, qsrn_ttile := 1]
+qsr3[qsrn >= qsrn_33 & qsrn < qsrn_67, qsrn_ttile := 2]
+qsr3[qsrn >= qsrn_67, qsrn_ttile := 3]
+#summarize
+qsr3 <- qsr3[, list(wp_resp_count = sum(wp_resp_count,na.rm=T),
+                    wp_tb_count = sum(wp_tb_count,na.rm=T),
+                    wp_tb_score = sum(wp_tb_count,na.rm=T)/sum(wp_resp_count,na.rm=T),
+                    miles = mean(miles,na.rm=T)),
+             by=c("qsrn_ttile","urbanity")]
+qsr3 <- setorder(qsr3,urbanity,qsrn_ttile)
 
 ##make comps quartile factor for grouping
-qsr3[, qsrn_qtile := as.factor(qsrn_qtile)]
+qsr3[, qsrn_ttile := as.factor(qsrn_ttile)]
 #set labels
-lname <- "QSR Count Quartile"
-llabels <- c("25th", "50th", "75th", "100th") 
+lname <- "QSR Count Tertile"
+llabels <- c("33rd", "67th", "100th") 
 #plot of comps quartiles with average CC top box score for each
 #set up unique elements
 DT <- copy(qsr3[urbanity=="U2"])
 maintitle <- "Worth Perceptions by QSR Count - Urban Core"
 ylabel <- "WP Top Box Score"
-xlabel <- "QSR Count Quartile"
-xvar <- DT[,qsrn_qtile]
+xlabel <- "QSR Count Tertile"
+xvar <- DT[,qsrn_ttile]
 yvar <- DT[,wp_tb_score]
 pdata <- DT
 #plot
 ggplot(data = pdata, aes(x = xvar, y = yvar*100)) +
-  geom_bar(stat="identity", width = 0.7, fill="lightblue", colour="black") + theme_bw() + 
+  geom_bar(stat="identity", width = 0.7, fill="lightgray", colour="black") + theme_bw() + 
   ggtitle(maintitle) + guides(fill=FALSE) +
   scale_y_continuous(limits=c(0,40)) +
   geom_text(size = 5, aes(label=paste0("WP = ",round(yvar,3)*100,"%"),y=0), stat= "identity", vjust = -1.75) +
-  geom_text(size = 5, aes(label=c("QSRs <3","QSRs 4-5","QSRs 6-7","QSRs 8+"),y=0), stat= "identity", vjust = -.5) +
+  geom_text(size = 5, aes(label=c("QSRs <3","QSRs 4-6","QSRs 7+"),y=0), stat= "identity", vjust = -.5) +
   theme(axis.text=element_text(size=8), axis.title=element_text(size=8), 
         plot.title = element_text(size = 10, face = "bold")) + 
   labs(x = xlabel, y = ylabel) 
