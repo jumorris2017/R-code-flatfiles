@@ -159,3 +159,48 @@ ggplot(data = pdata, aes(x = xvar, y = yvar*100)) +
 
 
 
+
+##12/15/17 updates for Mike
+#load data
+qsr <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/worthperceptions_QSRproximinity.csv")
+setnames(qsr,c("SBUX_STORENUM","QSR_Count","miles_closest"),c("store_num","qsrn","miles"))
+qsr[, qsrn := as.numeric(qsrn)]
+regi <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/worthperceptions_QSRproximinity_regioncodes.csv")
+setnames(regi,c("STORE_NUM","RGN_ORG_LVL_ID","RGN_ORG_LVL_DESCR"),c("store_num","regcd","regid"))
+#keep only stores in both data.tables
+regi <- regi[store_num %in% unique(qsr[,store_num])]
+
+temp5 <- copy(qsr)
+temp5 <- left_join(temp5,regi,by="store_num")
+setDT(temp5)
+
+
+
+
+temp5 <- temp5[, c("store_num","regid","urbanity")]
+temp5[, store_num := 1]
+temp5 <- temp5[, list(Store_Count = sum(store_num)), by=c("regid","urbanity")]
+temp <- temp5[, list(Store_Count = sum(Store_Count)), by=c("urbanity")]
+setnames(temp,"Store_Count","Urbanity_Store_Count")
+temp5 <- left_join(temp5,temp,by="urbanity")
+setDT(temp5)
+temp5[, totalN := 8309]
+
+temp5[, Percent_of_Urbanity := round(Store_Count/Urbanity_Store_Count,3)*100]
+temp5[, Percent_of_TotalStores := round(Store_Count/totalN,3)*100]
+
+temp5[, Index_UrbanToTotal_Pct := round((Percent_of_Urbanity/Percent_of_TotalStores)/100,3)]
+
+#change infinite values to 0
+temp5[mapply(is.infinite, temp5)] <- 0
+
+temp5[, Index_Flag := 0]
+temp5[Index_UrbanToTotal_Pct>=.8&Index_UrbanToTotal_Pct<=1.2, Index_Flag := 1]
+temp5[,totalN := NULL]
+temp5 <- setorder(temp5,urbanity,-Index_UrbanToTotal_Pct)
+write.xlsx(temp5,file="C:/Users/jumorris/UrbanCore_StoreCount-by-Region.xlsx")
+
+
+
+
+
