@@ -8,7 +8,7 @@ library(bit64)
 
 ##to get AVERAGE SCORES
 #load data 
-mtest <- fread("C:/Users/jumorris/ce101_12_26_17/ce101_12_26_17.csv")
+mtest <- fread("C:/Users/jumorris/ce101_01_02_18/ce101_01_02_18.csv")
 
 #Recode MOBVERSION so blanks are 1's
 mtest[, mob := ifelse(is.na(mobversion),1,mobversion)]
@@ -47,7 +47,7 @@ mtemp[, delta := mob_new-mob_old]
 
 ##to get RESPONSE RATE
 #load data 
-mtest2 <- fread("C:/Users/jumorris/ce101_12_26_17/ce101_12_26_17.csv")
+mtest2 <- fread("C:/Users/jumorris/ce101_01_02_18/ce101_01_02_18.csv")
 
 #Recode MOBVERSION so blanks are 1's
 mtest2[, mob := ifelse(is.na(mobversion),1,mobversion)]
@@ -60,7 +60,6 @@ listofvars <- colnames(mtest2)[c(28:36)]
 mtest2[, (listofvars) := lapply(.SD, function(x) ifelse(x==9,NA,x)), .SDcols=listofvars]
 mtest2[, (listofvars[1]) := lapply(.SD, function(x) ifelse(x==5,1,0)), .SDcols=listofvars[1]]
 mtest2[, (listofvars[-1]) := lapply(.SD, function(x) ifelse(x==7,1,0)), .SDcols=listofvars[-1]]
-
 
 #tests
 t.test(mtest2[mob==1,q1],mtest2[mob==2,q1])
@@ -81,6 +80,11 @@ mtemp2 <- dcast.data.table(mtemp2, variable ~ mob3cat, value.var="value")
 setnames(mtemp2,c("1","2","3"),c("mob_old","mob_new","desk_old"))
 # setnames(mtemp2,c("1","2"),c("mob_old","mob_new"))
 # mtemp2[, delta := mob_new-mob_old]
+#aggregate to get so
+sotemp <- mtemp2[variable=="q2_1"|variable=="q2_3"|variable=="q2_4"|
+                   variable=="q2_5"|variable=="q2_6"|variable=="q2_7", 
+                 lapply(.SD,mean), .SDcols=colnames(mtemp2)[c(2:4)]]
+
 
 
 #aggreate TO GET SUMS
@@ -91,11 +95,19 @@ mtemp3 <- dcast.data.table(mtemp3, variable ~ mob3cat, value.var="value")
 setnames(mtemp3,c("1","2","3"),c("mob_old","mob_new","desk_old"))
 mtemp3[, total_old := mob_old + desk_old]
 setcolorder(mtemp3,c("variable","total_old","mob_old","mob_new","desk_old"))
+#aggregate to get so
+sotemp <- mtemp3[variable=="q2_1"|variable=="q2_3"|variable=="q2_4"|
+                   variable=="q2_5"|variable=="q2_6"|variable=="q2_7", 
+                 lapply(.SD,sum), .SDcols=colnames(mtemp3)[c(2:5)]]
+
+
+
+
 
 
 ##to get TOP BOX
 #load data 
-mtest4 <- fread("C:/Users/jumorris/ce101_12_26_17/ce101_12_26_17.csv")
+mtest4 <- fread("C:/Users/jumorris/ce101_01_02_18/ce101_01_02_18.csv")
 
 #Recode MOBVERSION so blanks are 1's
 mtest4[, mob := ifelse(is.na(mobversion),1,mobversion)]
@@ -108,6 +120,9 @@ listofvars <- colnames(mtest4)[c(28:36)]
 mtest4[, (listofvars) := lapply(.SD, function(x) ifelse(x==9,NA,x)), .SDcols=listofvars]
 mtest4[, (listofvars[1]) := lapply(.SD, function(x) ifelse(x==5,1,0)), .SDcols=listofvars[1]]
 mtest4[, (listofvars[-1]) := lapply(.SD, function(x) ifelse(x==7,1,0)), .SDcols=listofvars[-1]]
+
+#create so aggregate
+mtest4[, q_so := (q2_1+q2_3+q2_4+q2_5+q2_6+q2_7)/6]
 
 #tests
 # t.test(mtest4[mob==1,q1],mtest4[mob==2,q1])
@@ -129,6 +144,7 @@ t.test(mtest4[mob3cat==1,q2_5],mtest4[mob3cat==2,q2_5])
 t.test(mtest4[mob3cat==1,q2_6],mtest4[mob3cat==2,q2_6])
 t.test(mtest4[mob3cat==1,q2_7],mtest4[mob3cat==2,q2_7])
 t.test(mtest4[mob3cat==1,q2_8],mtest4[mob3cat==2,q2_8])
+t.test(mtest4[mob3cat==1,q_so],mtest4[mob3cat==2,q_so])
 
 #aggreate for TOP BOX - old v new
 mtemp4 <- mtest4[, lapply(.SD, function(x) round(mean(x,na.rm=T),5)*100), by="mob", .SDcols=listofvars]
@@ -136,6 +152,12 @@ mtemp4 <- mtest4[, lapply(.SD, function(x) round(mean(x,na.rm=T),5)*100), by="mo
 mtemp4 <- melt(mtemp4,id="mob")
 mtemp4 <- dcast.data.table(mtemp4, variable ~ mob, value.var="value")
 setnames(mtemp4,c("1","2"),c("mob_old","mob_new"))
+
+#aggregate to get so
+sotemp <- mtemp4[variable=="q2_1"|variable=="q2_3"|variable=="q2_4"|
+                   variable=="q2_5"|variable=="q2_6"|variable=="q2_7", 
+                 lapply(.SD,mean), .SDcols=colnames(mtemp4)[c(2:3)]]
+sotemp[, del_mob_newtoold := mob_new - mob_old]
 
 #aggreate for TOP BOX - old mobile, new mobile, old desktop
 mtemp4 <- mtest4[, lapply(.SD, function(x) round(mean(x,na.rm=T),5)*100), by="mob3cat", .SDcols=listofvars]
@@ -145,3 +167,9 @@ mtemp4 <- dcast.data.table(mtemp4, variable ~ mob3cat, value.var="value")
 setnames(mtemp4,c("1","2","3"),c("mob_old","mob_new","desk_old"))
 # setnames(mtemp4,c("1","2"),c("mob_old","mob_new"))
 mtemp4[, del_mob_newtoold := mob_new - mob_old]
+
+#aggregate to get so
+sotemp <- mtemp4[variable=="q2_1"|variable=="q2_3"|variable=="q2_4"|
+                   variable=="q2_5"|variable=="q2_6"|variable=="q2_7", 
+                 lapply(.SD,mean), .SDcols=colnames(mtemp4)[c(2:5)]]
+sotemp[, del_mob_newtoold := mob_new - mob_old]
