@@ -10,31 +10,41 @@ library(bit64)
 #load data 
 mtest <- fread("C:/Users/jumorris/ce101_01_02_18/ce101_01_02_18.csv")
 
+#pull in transaction count data from November 2017
+mtrans <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CE-mobiletest_transcount_byguid.csv")
+
+
+
+#merge transaction data by guid
+setnames(mtrans,"GUID_ID","guid")
+mtest <- left_join(mtest,mtrans,by="guid")
+setDT(mtest)
+
 #Recode MOBVERSION so blanks are 1's
 mtest[, mob := ifelse(is.na(mobversion),1,mobversion)]
 
 #create new version that splits movile from desktop/tablet
+#c("1","2","3"),c("mob_old","mob_new","desk_old")
 mtest[, mob3cat := ifelse(is.na(mobversion),3,mobversion)]
 
 #convert 9's to NA
 listofvars <- colnames(mtest)[c(28:36)]
 mtest[, (listofvars) := lapply(.SD, function(x) ifelse(x==9,NA,x)), .SDcols=listofvars]
-mtest[, (listofvars[1]) := lapply(.SD, function(x) ifelse(x==5,1,0)), .SDcols=listofvars[1]]
-mtest[, (listofvars[-1]) := lapply(.SD, function(x) ifelse(x==7,1,0)), .SDcols=listofvars[-1]]
+# mtest[, (listofvars[1]) := lapply(.SD, function(x) ifelse(x==5,1,0)), .SDcols=listofvars[1]]
+# mtest[, (listofvars[-1]) := lapply(.SD, function(x) ifelse(x==7,1,0)), .SDcols=listofvars[-1]]
 
+# #tests
+# t.test(mtest[mob==1,q1],mtest[mob==2,q1])
+# t.test(mtest[mob==1,q2_1],mtest[mob==2,q2_1])
+# t.test(mtest[mob==1,q2_2],mtest[mob==2,q2_2])
+# t.test(mtest[mob==1,q2_3],mtest[mob==2,q2_3])
+# t.test(mtest[mob==1,q2_4],mtest[mob==2,q2_4])
+# t.test(mtest[mob==1,q2_5],mtest[mob==2,q2_5])
+# t.test(mtest[mob==1,q2_6],mtest[mob==2,q2_6])
+# t.test(mtest[mob==1,q2_7],mtest[mob==2,q2_7])
+# t.test(mtest[mob==1,q2_8],mtest[mob==2,q2_8])
 
-#tests
-t.test(mtest[mob==1,q1],mtest[mob==2,q1])
-t.test(mtest[mob==1,q2_1],mtest[mob==2,q2_1])
-t.test(mtest[mob==1,q2_2],mtest[mob==2,q2_2])
-t.test(mtest[mob==1,q2_3],mtest[mob==2,q2_3])
-t.test(mtest[mob==1,q2_4],mtest[mob==2,q2_4])
-t.test(mtest[mob==1,q2_5],mtest[mob==2,q2_5])
-t.test(mtest[mob==1,q2_6],mtest[mob==2,q2_6])
-t.test(mtest[mob==1,q2_7],mtest[mob==2,q2_7])
-t.test(mtest[mob==1,q2_8],mtest[mob==2,q2_8])
-
-#aggreate
+#aggregate for average scores
 mtemp <- mtest[, lapply(.SD, function(x) round(mean(x,na.rm=T),2)), by="mob", .SDcols=listofvars]
 #melt and case
 mtemp <- melt(mtemp,id="mob")
@@ -42,8 +52,70 @@ mtemp <- dcast.data.table(mtemp, variable ~ mob, value.var="value")
 setnames(mtemp,c("1","2"),c("mob_old","mob_new"))
 mtemp[, delta := mob_new-mob_old]
 
+#get score frequency
+q1dt <- mtest %>% group_by(mob3cat) %>%
+  count(q1) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q1dt)
+setnames(q1dt,c("mob3cat","value","q1","q1pct"))
+q21dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_1) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q21dt)
+setnames(q21dt,c("mob3cat","value","q21","q21pct"))
+q22dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_2) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q22dt)
+setnames(q22dt,c("mob3cat","value","q22","q22pct"))
+q23dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_3) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q23dt)
+setnames(q23dt,c("mob3cat","value","q23","q23pct"))
+q24dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_4) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q24dt)
+setnames(q24dt,c("mob3cat","value","q24","q24pct"))
+q25dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_5) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q25dt)
+setnames(q25dt,c("mob3cat","value","q25","q25pct"))
+q26dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_6) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q26dt)
+setnames(q26dt,c("mob3cat","value","q26","q26pct"))
+q27dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_7) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q27dt)
+setnames(q27dt,c("mob3cat","value","q27","q27pct"))
+q28dt <- mtest %>% group_by(mob3cat) %>%
+  count(q2_8) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(q28dt)
+setnames(q28dt,c("mob3cat","value","q28","q28pct"))
+
+#get transaction frequency
+#recode 15+ as 15
+mtest[NOV17_TRAN>=15, NOV17_TRAN := 15]
+#get frequncy
+transdt <- mtest %>% group_by(mob3cat) %>%
+  count(NOV17_TRAN) %>% mutate(pct = round(n/sum(n),3)*100)
+setDT(transdt)
+
+#break mob_new into 10 samples
+randum <- runif(nrow(mtest),0,1)
+mtest <- cbind(mtest,randum)
+mtest <- mtest %>% mutate(sample = ntile(randum, 10))
+setDT(mtest)
+
+#aggregate for average scores by sample
+rtemp <- mtest
+rtemp[, (listofvars[1]) := lapply(.SD, function(x) ifelse(x==5,1,0)), .SDcols=listofvars[1]]
+rtemp[, (listofvars[-1]) := lapply(.SD, function(x) ifelse(x==7,1,0)), .SDcols=listofvars[-1]]
+rtemp <- rtemp[, lapply(.SD, function(x) round(mean(x,na.rm=T),4)*100), by="sample", .SDcols=listofvars]
+hist(rtemp[,q2_8])
 
 
+#merge
+newDT <- Reduce(function(x, y) {merge(x, y, by=c("mob3cat", "value"), all = TRUE)}, 
+                list(q1dt,q21dt,q22dt,q23dt,q24dt,q25dt,q26dt,q27dt,q28dt))
+write.csv(newDT,file="C:/Users/jumorris/mobile_test_scoredist.csv")
 
 ##to get RESPONSE RATE
 #load data 
