@@ -142,6 +142,9 @@ print(plot1)
 #melt to do side-by-side barcharts
 meltbe <- tempbe[, n := NULL]
 meltbe <- melt(meltbe,id=c("vis_bin","ProvenSR"))
+meltbe[, variable := ordered(variable, levels = c("Q2_1_score", "Q2_2_score", "Q2_3_score",
+                                   "Q2_4_score", "Q2_5_score", "Q2_6_score",
+                                   "Q2_7_score", "Q2_8_score"))]
 
 #plot 2: ce from brand equity - non-sr
 #set labels
@@ -208,3 +211,21 @@ plot4 <- ggplot(data=pdata4,aes(y=py4,x=as.factor(px4),fill=as.factor(groupvar4)
 #combine into one plot
 plot5 <- plot2 / plot3 / plot4
 print(plot5)
+
+
+##demographics
+
+#load data
+be2 <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
+#convert to data.table
+setDT(be2)
+
+#keep only variables we need
+be2 <- be2[, .(ProvenSR,S1,S2_der,QC1,QC3,QC4,QC5New)]
+
+
+
+
+
+
+
