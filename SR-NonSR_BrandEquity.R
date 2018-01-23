@@ -103,11 +103,11 @@ groupvar1a <- tempbe[,vis_bin]
 #nvar1a <- tempbe[,n]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
-  geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels) +
   xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
-  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.7))
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95))
 
 #plot 1b: customer connection from brand equity
 #make fake grouping variable
@@ -145,11 +145,11 @@ meltbe <- melt(meltbe,id=c("vis_bin","ProvenSR"))
 
 #plot 2: ce from brand equity - non-sr
 #set labels
-xlabel <- "Customer Experience"
+xlabel <- "Non-SR Customers"
 xlabels <- c("Speed","CC","Above & Beyond","Order Accuracy","Bev Taste","Food Taste","Cleanliness","Worth")
 ylabel <- "Top Box Score"
 tlabel <- "Brand Equity Study"
-sublabel <- "Non-SR Customers"
+sublabel <- "Customer Experience"
 #manual legend labels
 lname <- "30-Day Visitation"
 llabels <- c("1-5", "6-10", "11-15", "16+")
@@ -162,13 +162,13 @@ groupvar2 <- meltbe[ProvenSR==0,vis_bin]
 plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2),fill=as.factor(groupvar2))) + 
   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
-  scale_x_discrete(name="",labels=xlabels) +
+  scale_x_discrete(name=xlabel,labels=xlabels) +
   ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel) +
   geom_text(size = 2.5, aes(label=py2,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
 
 #plot 3: ce from brand equity - sr
 #set labels
-sublabel <- "SR Customers"
+xlabel <- "SR Customers"
 caption <- "Brand Equity Study, December FY18"
 #values
 pdata3 <- meltbe[ProvenSR==1]
@@ -180,15 +180,15 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, guide=FALSE) + theme_economist() +
   scale_x_discrete(name=xlabel,labels=xlabels) +
-  xlab(xlabel) + ylab(ylabel) + labs(subtitle=sublabel,caption=caption) +
+  xlab(xlabel) + ylab(ylabel) + labs(caption=caption) +
   geom_text(size = 2.5, aes(label=py3,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
 
 #set labels
-xlabel <- "Customer Experience"
+xlabel <- "SR Customers"
 xlabels <- c("Speed","CC","Above & Beyond","Order Accuracy","Bev Taste","Food Taste","Cleanliness","Worth")
 ylabel <- "Top Box Score"
 tlabel <- "Customer Experience Survey"
-sublabel <- "SR Customers"
+sublabel <- "Customer Experience"
 caption <- "Customer Experience Survey, December FY18"
 #manual legend labels
 lname <- "30-Day Visitation"
@@ -202,7 +202,7 @@ groupvar4 <- ce[,vis_bin]
 plot4 <- ggplot(data=pdata4,aes(y=py4,x=as.factor(px4),fill=as.factor(groupvar4))) + 
   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
-  scale_x_discrete(name="",labels=xlabels) +
+  scale_x_discrete(name=xlabel,labels=xlabels) +
   ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 2.5, aes(label=py4,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
 #combine into one plot
