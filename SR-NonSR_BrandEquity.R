@@ -6,6 +6,7 @@ library(data.table)
 library(foreign)
 library(tidyverse)
 library(ggthemes)
+library(patchwork)
 
 #load data
 be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
@@ -63,7 +64,6 @@ tempbe <- be %>%
             n = n())
 setDT(tempbe)
 
-
 #bring in our data
 ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
 
@@ -77,9 +77,12 @@ ce[TRANS>=11&TRANS<=15, vis_bin := 3]
 ce[TRANS>=16, vis_bin := 4]
 
 #aggregate by vis_bin and question
-ce <- ce[, list(TB_COUNT = sum(TB_COUNT,na.rm=T),
+ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
+                TB_COUNT = sum(TB_COUNT,na.rm=T),
                 RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
          by=c("vis_bin","QSTN_ID")]
+#make fake SR variable for plotting
+ce[, ProvenSR := 1]
 
 #calculate TB score
 ce[, tb_score := round((TB_COUNT / RSPSN_COUNT)*100,1)]
@@ -100,16 +103,18 @@ pdata1a <- tempbe
 px1a <- tempbe[,ProvenSR]
 py1a <- tempbe[,Q2_2_score]
 groupvar1a <- tempbe[,vis_bin]
-#nvar1a <- tempbe[,n]
+nvar1a <- tempbe[,n]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels) +
-  xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
-  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95))
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
+  geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
 
-#plot 1b: customer connection from brand equity
+#plot 1b: customer connection from ce survey
 #make fake grouping variable
 #set labels
 # xlabel <- "Proven SR"
@@ -126,16 +131,19 @@ pdata1b <- ce[QSTN_ID=="Q2_2"]
 px1b <- ce[QSTN_ID=="Q2_2",ProvenSR]
 py1b <- ce[QSTN_ID=="Q2_2",tb_score]
 groupvar1b <- ce[QSTN_ID=="Q2_2",vis_bin]
+nvar1b <- ce[QSTN_ID=="Q2_2",USER_COUNT]
 #plot itself
-plotb <- ggplot(data=pdata1b,aes(y=py1b,x=as.factor(px1b),fill=as.factor(groupvar1b))) + 
-  geom_bar(stat="identity", width = 1, position=position_dodge(), colour="black") +
+plot1b <- ggplot(data=pdata1b,aes(y=py1b,x=as.factor(px1b),fill=as.factor(groupvar1b))) + 
+  geom_bar(stat="identity", width = .7, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels) +
-  xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
-  geom_text(size = 3.5, aes(label=py1b,y=0), stat="identity", vjust = -2, position = position_dodge(1))
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1b,y=0), stat="identity", vjust = -2, position = position_dodge(0.7)) +
+  geom_text(size = 2.5, aes(label=paste0("n=",nvar1b),y=0), stat= "identity", vjust = -1, position = position_dodge(0.7)) 
+print(plot1b)
 
 #put together
-plot1 <- plot1a / plot1b
+plot1 <- plot1a + plot1b
 print(plot1)
 
 #store experience: all variables
@@ -213,19 +221,66 @@ plot5 <- plot2 / plot3 / plot4
 print(plot5)
 
 
-##demographics
-
-#load data
-be2 <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
-#convert to data.table
-setDT(be2)
-
-#keep only variables we need
-be2 <- be2[, .(ProvenSR,S1,S2_der,QC1,QC3,QC4,QC5New)]
+##chart of High freq (6+) SR, non-SR from brand equity
+hfnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
+hfsr <- c(0.316734235763449,0.400199086,0.354659141,0.338949766,0.347741418,0.386038913,0.403829059,0.357128164,0.349871869,0.375000117,0.349929275,0.364159199)
+hfnsr <- c(0.263260941976257,0.33346994,0.244993283,0.304362228,0.301443643,0.258287159,0.306139404,0.262061505,0.247021047,0.272584936,0.287737543,0.32874728)
 
 
+#bring in our data
+ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
 
+#keep only question 2
+ce <- ce[QSTN_ID=="Q2_2"]
 
+#create frequency bins (1: 1-5, 2: 6+)
+ce[TRANS<=5, hf6plus := 0]
+ce[TRANS>=6, hf6plus := 1]
+#keep only high freq
+ce <- ce[hf6plus==1]
 
+#aggregate by vis_bin and question
+ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
+                TB_COUNT = sum(TB_COUNT,na.rm=T),
+                RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
+         by=c("hf6plus","FSCL_YR_NUM","FSCL_PER_IN_YR_NUM")]
 
+#calculate TB score
+ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+
+#sort by year and month
+setorder(ce,FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)
+
+#attach columns from brand equity
+cebe <- cbind(ce,hfnames,hfsr,hfnsr)
+setDT(cebe)
+cebe <- cebe[,c("hfnames","tb_score","hfsr","hfnsr"),with=FALSE]
+
+#melt by pop
+cebe <- melt(cebe,id.var="hfnames")
+
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+sublabel <- "Customer Connection Trend"
+tlabel <- "Higher Frequency Customers (6+ visits/month)"
+caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017"
+#manual legend labels
+lname <- "Survey Group"
+llabels <- c("Customer Experience Survey","Brand Equity: SR","Brand Equity: Non-SR")
+#values
+pdata <- cebe
+px <- cebe[,hfnames]
+py <- cebe[,value]
+groupvar <- cebe[,variable]
+#plot itself
+plot2 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  #scale_x_continuous(limits=c(pdata[,min(px)],pdata[,max(px)]), breaks = scales::pretty_breaks(n = ybreaks), labels = waiver()) +
+  scale_y_continuous(limits=c(0,pdata[,max(py)])) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
 
