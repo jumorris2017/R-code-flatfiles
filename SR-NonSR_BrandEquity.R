@@ -284,3 +284,162 @@ plot2 <- ggplot() +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
+
+
+
+
+
+
+# ##UPDATE TO INCLUDE TRENDED CC BY FREQUENCY BINS & ROLLING 2-MONTHS
+
+#load data
+be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
+#convert to data.table
+setDT(be)
+
+#keep only variables we need
+be <- be[, .(ProvenSR,Month,Q5Starbucks_TotalVisits,QSB3_MadeAnEffortToGetToKnowMe_slice)]
+
+#drop NA's for core variables
+be <- na.omit(be, cols=c("ProvenSR","Month","Q5Starbucks_TotalVisits","QSB3_MadeAnEffortToGetToKnowMe_slice"))
+
+#recode ProvenSR to binary
+be[ProvenSR==2, ProvenSR := 0]
+
+#month 2 = Nov 2016, month 15 = Dec 2017.
+#create rolling 2
+##rbind the data to itself
+becopy <- be[Month>=2&Month<=14]
+becopy[, Month := Month+1]
+#rbind
+be <- rbind(be,becopy)
+
+#keep only FY17 (month 4-15)
+be <- be[Month>=4&Month<=15]
+
+#mapvalues
+monthnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
+be[, fyfp :=  plyr::mapvalues(be[, Month], from = c(4:15), to = monthnames)]
+
+#rename long variables
+setnames(be,c("Q5Starbucks_TotalVisits","QSB3_MadeAnEffortToGetToKnowMe_slice"), c("visits","Q2_2"))
+
+#create frequency bins (1: 1-5, 2: 6-10, 3: 11-15, 4: 16+)
+be[visits<=5, vis_bin := 1]
+be[visits>=6&visits<=10, vis_bin := 2]
+be[visits>=11&visits<=15, vis_bin := 3]
+be[visits>=16, vis_bin := 4]
+
+#create TB variables
+be[Q2_2<7, Q2_2_score := 0]; be[Q2_2==7, Q2_2_score := 1]
+#create fake variable to calculate response count
+be[Q2_2<=7, RSPSN_COUNT := 1]
+
+#aggregate by vis_bin, ProvenSR, and month
+be <- be[, list(TB_COUNT = sum(Q2_2_score,na.rm=T),
+                RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
+         by=c("vis_bin","fyfp","ProvenSR")]
+be <- setorder(be,vis_bin,fyfp,ProvenSR)
+
+#calculate TB score
+be[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+
+
+#bring in our data
+ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
+
+#keep only question 2
+ce <- ce[QSTN_ID=="Q2_2"]
+
+#create frequency bins (1: 1-5, 2: 6-10, 3: 11-15, 4: 16+)
+ce[TRANS<=5, vis_bin := 1]
+ce[TRANS>=6&TRANS<=10, vis_bin := 2]
+ce[TRANS>=11&TRANS<=15, vis_bin := 3]
+ce[TRANS>=16, vis_bin := 4]
+
+#aggregate by vis_bin and month
+ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
+                TB_COUNT = sum(TB_COUNT,na.rm=T),
+                RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
+         by=c("vis_bin","FSCL_YR_NUM","FSCL_PER_IN_YR_NUM")]
+ce[, tempvar := paste0(FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)]
+#mapvalues
+monthnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
+ce[, fyfp :=  plyr::mapvalues(ce[, tempvar], from = unique(ce[, tempvar]), to = monthnames)]
+ce[, tempvar := NULL]
+
+#calculate TB score
+ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+
+#sort
+setorder(ce,vis_bin,fyfp)
+
+#make fake SR variable for plotting
+ce[, ProvenSR := 2]
+
+#rbindlist the datasets together
+be <- be[,.(vis_bin,fyfp,ProvenSR,tb_score)]
+ce <- ce[,.(vis_bin,fyfp,ProvenSR,tb_score)]
+
+#attach columns from brand equity
+cebe <- rbind(ce,be)
+setDT(cebe)
+
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+tlabel <- "Customer Connection Trend"
+sublabel <- "January - December 2017"
+caption <- "Customer Experience and Brand Equity Surveys"
+#manual legend labels
+lname1 <- "Survey Group"
+llabels1 <- c("BE (Non-SR)","BE (SR)","CE (SR)")
+lname2 <- "Monthly Visits"
+llabels2 <- c("1-5","6-10","11-15","16+")
+#values
+pdata <- cebe
+px <- cebe[,fyfp]
+py <- cebe[,tb_score]
+groupvar <- cebe[,vis_bin]
+colourvar <- cebe[,ProvenSR]
+#plot itself
+plot2 <- ggplot(data=pdata, aes(x=px, y=py, colour=factor(colourvar), shape=factor(groupvar), group=interaction(groupvar, colourvar))) + 
+  geom_point(size=2.5) + geom_line(size=1) +
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname1, labels=llabels1, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  scale_shape_discrete(name=lname2, labels=llabels2, guide=guide_legend(order=1)) +
+  guides(shape = guide_legend(override.aes = list(size = 5))) + 
+  scale_y_continuous(limits=c(0,pdata[,max(py)]*1.15)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
+
+
+
+
+
+
+
+#do separately for each survey
+#set labels
+ylabel <- "CC Score"
+tlabel <- "Customer Experience Survey"
+sublabel <- "January - December 2017"
+#manual legend labels
+lname2 <- "Monthly Visits"
+llabels2 <- c("1-5","6-10","11-15","16+")
+#values
+pdata <- cebe[ProvenSR==2]
+px <- cebe[ProvenSR==2,fyfp]
+py <- cebe[ProvenSR==2,tb_score]
+groupvar <- cebe[ProvenSR==2,vis_bin]
+#plot itself
+plot3 <- ggplot(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  geom_line() +
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname2, labels=llabels2, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 5))) + 
+  scale_y_continuous(limits=c(0,0.6)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel)
+print(plot3)
+
