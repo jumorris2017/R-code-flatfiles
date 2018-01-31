@@ -4,6 +4,7 @@
 #load libraries
 library(data.table)
 library(bit64)
+set.seed(98115)
 
 
 ##to get AVERAGE SCORES
