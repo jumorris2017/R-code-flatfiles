@@ -802,7 +802,7 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels) +
-  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(caption=caption) +
   geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
 print(plot1a)
 
@@ -835,7 +835,7 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels) +
-  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(caption=caption) +
   geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
 print(plot1a)
 
@@ -925,3 +925,158 @@ plot2 <- ggplot(csdpm,aes(ccdel)) +
   scale_x_continuous(limits=c(-40,40), breaks = scales::pretty_breaks(15)) +
   xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#average number of surveys per store, across the day
+#load data
+cs1q <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_bystore_1quarter.csv") #1 quarter
+#agg at the store level
+cs1q <- cs1q[, list(sum_rspns = sum(TOTAL_RSPNS,na.rm=T)), by="STORE_NUM"]
+#average across the stores
+cs1q <- cs1q[, list(avg_rspns = mean(sum_rspns,na.rm=T))]
+
+
+#2 month snapshots for stores
+str2m <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_r2m.csv")
+#drop earliest month
+str2m <- str2m[(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM>=3)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM<=3)]
+str2m[, cc_score := round(TOTAL_TB/TOTAL_RSPNS,3)*100]
+#make month year var
+str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
+str2m[, FPFY := as.numeric(FPFY)]
+str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
+#calculate cc delta
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="cc_score"]
+str2m[, r2mccdel := cc_score-lag_R2MCC]
+#keep only the latest period for plot
+str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+
+#set labels
+xlabel <- "CC Score Delta"
+ylabel <- "Number of Stores"
+sublabel <- "FY18 Nov and Dec"
+tlabel <- "Delta in CC Score across 2 Months"
+caption <- "All Stores"
+#plot itself
+plot2 <- ggplot(str2m,aes(r2mccdel)) + 
+  geom_histogram(binwidth=1,show.legend=FALSE,fill="lightgrey",col=I("black")) + 
+  theme_economist() + scale_colour_brewer(palette = 1, name="", labels="") +
+  scale_x_continuous(limits=c(-55,55), breaks = scales::pretty_breaks(35)) +
+  xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
+
+
+
+#rolling 2 for stores
+str2m <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_r2m.csv")
+#calculate rolling two by day part
+str2m[, lag_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_TB"]
+str2m[, lag_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_RSPNS"]
+#sum together
+str2m[, R2MTB := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_TB","lag_TB")]
+str2m[, R2MRSPNS := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_RSPNS","lag_RSPNS")]
+#drop earliest month
+str2m <- str2m[(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM>=3)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM<=3)]
+str2m[, R2MCC := round(R2MTB/R2MRSPNS,3)*100]
+#make month year var
+str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
+str2m[, FPFY := as.numeric(FPFY)]
+str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
+#calculate cc delta
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="R2MCC"]
+str2m[, r2mccdel := R2MCC-lag_R2MCC]
+#keep only the latest period for plot
+str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+
+#set labels
+xlabel <- "CC Score Delta"
+ylabel <- "Number of Stores"
+sublabel <- "FY18 Oct-Nov and Nov-Dec"
+tlabel <- "Delta in CC Score across Rolling-2 Month Window"
+caption <- "All Stores"
+#plot itself
+plot2 <- ggplot(str2m,aes(r2mccdel)) + 
+  geom_histogram(binwidth=1,show.legend=FALSE,fill="lightgrey",col=I("black")) + 
+  theme_economist() + scale_colour_brewer(palette = 1, name="", labels="") +
+  scale_x_continuous(limits=c(-35,35), breaks = scales::pretty_breaks(35)) +
+  xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
+
+
+
+#rolling 3 for stores
+str2m <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_r2m.csv")
+#calculate rolling two by day part
+str2m[, lag_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_TB"]
+str2m[, lag_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_RSPNS"]
+str2m[, lag2_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="lag_TB"]
+str2m[, lag2_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="lag_RSPNS"]
+#sum together
+str2m[, R2MTB := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_TB","lag_TB","lag2_TB")]
+str2m[, R2MRSPNS := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_RSPNS","lag_RSPNS","lag2_RSPNS")]
+#drop earliest 2 months
+str2m <- str2m[(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM>=4)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM<=3)]
+str2m[, R2MCC := round(R2MTB/R2MRSPNS,3)*100]
+#make month year var
+str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
+str2m[, FPFY := as.numeric(FPFY)]
+str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
+#calculate delta
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="R2MCC"]
+str2m[, r2mccdel := R2MCC-lag_R2MCC]
+#keep only the latest period for plot
+str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+
+#set labels
+xlabel <- "CC Score Delta"
+ylabel <- "Number of Stores"
+sublabel <- "FY18 Sep-Nov and Oct-Dec"
+tlabel <- "Delta in CC Score across Rolling-3 Month Window"
+caption <- "All Stores"
+#plot itself
+plot2 <- ggplot(str2m,aes(r2mccdel)) + 
+  geom_histogram(binwidth=1,show.legend=FALSE,fill="lightgrey",col=I("black")) + 
+  theme_economist() + scale_colour_brewer(palette = 1, name="", labels="") +
+  scale_x_continuous(limits=c(-50,50), breaks = scales::pretty_breaks(30)) +
+  xlab(xlabel) + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
+
+
+
+# #plot trends
+#set labels
+xlabel <- "Fiscal Year and Period"
+xlabels <- str2m[, FPFYlabel]
+ylabel <- "R2M CC Score"
+tlabel <- "R2M CC Top Box Score Trend"
+#set data and variables
+pdata <- str2m
+px <- str2m[, FPFY]
+py <- str2m[, R2MCC]
+#manual legend labels
+lname <- "Fiscal Year"
+llabels <- c("Early AM","AM","Midday","PM","Late PM")
+ybreaks <- 8
+#line chart, factored by one variable
+plot1 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py)) +
+  xlab(xlabel) + ylab(ylabel) + theme_economist() +
+  scale_colour_economist(palette = 1, name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) +
+  scale_x_continuous(labels=xlabels, limits=c(2017.3,2018.3), breaks = scales::pretty_breaks(n = 13)) +
+  scale_y_continuous(limits=c(0,.4),labels=scales::percent) +
+  labs(title = tlabel)
+print(plot1)

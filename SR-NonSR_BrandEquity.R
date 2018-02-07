@@ -65,7 +65,7 @@ tempbe <- be %>%
 setDT(tempbe)
 
 #bring in our data
-ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
+ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency_v2.csv")
 
 #keep only december fy18
 ce <- ce[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
@@ -80,9 +80,12 @@ ce[TRANS>=16, vis_bin := 4]
 ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
                 TB_COUNT = sum(TB_COUNT,na.rm=T),
                 RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
-         by=c("vis_bin","QSTN_ID")]
+         by=c("vis_bin")]
 #make fake SR variable for plotting
 ce[, ProvenSR := 1]
+
+#freq table
+ce %>% transmute(vis_bin, percent = USER_COUNT/sum(USER_COUNT))
 
 #calculate TB score
 ce[, tb_score := round((TB_COUNT / RSPSN_COUNT)*100,1)]
@@ -127,11 +130,11 @@ caption <- "Customer Experience Survey, December FY18"
 lname <- "30-Day Visitation"
 llabels <- c("1-5", "6-10", "11-15", "16+")
 #values
-pdata1b <- ce[QSTN_ID=="Q2_2"]
-px1b <- ce[QSTN_ID=="Q2_2",ProvenSR]
-py1b <- ce[QSTN_ID=="Q2_2",tb_score]
-groupvar1b <- ce[QSTN_ID=="Q2_2",vis_bin]
-nvar1b <- ce[QSTN_ID=="Q2_2",USER_COUNT]
+pdata1b <- ce
+px1b <- ce[,ProvenSR]
+py1b <- ce[,tb_score]
+groupvar1b <- ce[,vis_bin]
+nvar1b <- ce[,USER_COUNT]
 #plot itself
 plot1b <- ggplot(data=pdata1b,aes(y=py1b,x=as.factor(px1b),fill=as.factor(groupvar1b))) + 
   geom_bar(stat="identity", width = .7, position=position_dodge(), colour="black") +
@@ -194,62 +197,62 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
   xlab(xlabel) + ylab(ylabel) + labs(caption=caption) +
   geom_text(size = 2.5, aes(label=py3,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
 
-#set labels
-xlabel <- "SR Customers"
-xlabels <- c("Speed","CC","Above & Beyond","Order Accuracy","Bev Taste","Food Taste","Cleanliness","Worth")
-ylabel <- "Top Box Score"
-tlabel <- "Customer Experience Survey"
-sublabel <- "Customer Experience"
-caption <- "Customer Experience Survey, December FY18"
-#manual legend labels
-lname <- "30-Day Visitation"
-llabels <- c("1-5", "6-10", "11-15", "16+")
-#values
-pdata4 <- ce
-px4 <- ce[,QSTN_ID]
-py4 <- ce[,tb_score]
-groupvar4 <- ce[,vis_bin]
-#plot itself
-plot4 <- ggplot(data=pdata4,aes(y=py4,x=as.factor(px4),fill=as.factor(groupvar4))) + 
-  geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
-  scale_x_discrete(name=xlabel,labels=xlabels) +
-  ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
-  geom_text(size = 2.5, aes(label=py4,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
-#combine into one plot
-plot5 <- plot2 / plot3 / plot4
-print(plot5)
+# #set labels
+# xlabel <- "SR Customers"
+# xlabels <- c("Speed","CC","Above & Beyond","Order Accuracy","Bev Taste","Food Taste","Cleanliness","Worth")
+# ylabel <- "Top Box Score"
+# tlabel <- "Customer Experience Survey"
+# sublabel <- "Customer Experience"
+# caption <- "Customer Experience Survey, December FY18"
+# #manual legend labels
+# lname <- "30-Day Visitation"
+# llabels <- c("1-5", "6-10", "11-15", "16+")
+# #values
+# pdata4 <- ce
+# px4 <- ce[,QSTN_ID]
+# py4 <- ce[,tb_score]
+# groupvar4 <- ce[,vis_bin]
+# #plot itself
+# plot4 <- ggplot(data=pdata4,aes(y=py4,x=as.factor(px4),fill=as.factor(groupvar4))) + 
+#   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
+#   scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+#   scale_x_discrete(name=xlabel,labels=xlabels) +
+#   ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+#   geom_text(size = 2.5, aes(label=py4,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
+# #combine into one plot
+# plot5 <- plot2 / plot3 / plot4
+# print(plot5)
 
-
-##chart of High freq (6+) SR, non-SR from brand equity
-hfnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
-hfsr <- c(0.316734235763449,0.400199086,0.354659141,0.338949766,0.347741418,0.386038913,0.403829059,0.357128164,0.349871869,0.375000117,0.349929275,0.364159199)
-hfnsr <- c(0.263260941976257,0.33346994,0.244993283,0.304362228,0.301443643,0.258287159,0.306139404,0.262061505,0.247021047,0.272584936,0.287737543,0.32874728)
-
-
-#bring in our data
-ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
-
-#keep only question 2
-ce <- ce[QSTN_ID=="Q2_2"]
-
-#create frequency bins (1: 1-5, 2: 6+)
-ce[TRANS<=5, hf6plus := 0]
-ce[TRANS>=6, hf6plus := 1]
-#keep only high freq
-ce <- ce[hf6plus==1]
-
-#aggregate by vis_bin and question
-ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
-                TB_COUNT = sum(TB_COUNT,na.rm=T),
-                RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
-         by=c("hf6plus","FSCL_YR_NUM","FSCL_PER_IN_YR_NUM")]
-
-#calculate TB score
-ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
-
-#sort by year and month
-setorder(ce,FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)
+# 
+# ##chart of High freq (6+) SR, non-SR from brand equity
+# hfnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
+# hfsr <- c(0.316734235763449,0.400199086,0.354659141,0.338949766,0.347741418,0.386038913,0.403829059,0.357128164,0.349871869,0.375000117,0.349929275,0.364159199)
+# hfnsr <- c(0.263260941976257,0.33346994,0.244993283,0.304362228,0.301443643,0.258287159,0.306139404,0.262061505,0.247021047,0.272584936,0.287737543,0.32874728)
+# 
+# 
+# #bring in our data
+# ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency_v2.csv")
+# 
+# #keep only question 2
+# #ce <- ce[QSTN_ID=="Q2_2"]
+# 
+# #create frequency bins (1: 1-5, 2: 6+)
+# ce[TRANS<=5, hf6plus := 0]
+# ce[TRANS>=6, hf6plus := 1]
+# #keep only high freq
+# ce <- ce[hf6plus==1]
+# 
+# #aggregate by vis_bin and question
+# ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
+#                 TB_COUNT = sum(TB_COUNT,na.rm=T),
+#                 RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
+#          by=c("hf6plus","FSCL_YR_NUM","FSCL_PER_IN_YR_NUM")]
+# 
+# #calculate TB score
+# ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+# 
+# #sort by year and month
+# setorder(ce,FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)
 
 #attach columns from brand equity
 cebe <- cbind(ce,hfnames,hfsr,hfnsr)
@@ -306,13 +309,22 @@ be <- na.omit(be, cols=c("ProvenSR","Month","Q5Starbucks_TotalVisits","QSB3_Made
 #recode ProvenSR to binary
 be[ProvenSR==2, ProvenSR := 0]
 
-#month 2 = Nov 2016, month 15 = Dec 2017.
-#create rolling 2
-##rbind the data to itself
-becopy <- be[Month>=2&Month<=14]
-becopy[, Month := Month+1]
-#rbind
-be <- rbind(be,becopy)
+#rename long variables
+setnames(be,c("Q5Starbucks_TotalVisits","QSB3_MadeAnEffortToGetToKnowMe_slice"), c("visits","Q2_2"))
+
+#create TB variables
+be[Q2_2<7, Q2_2_score := 0]; be[Q2_2==7, Q2_2_score := 1]
+#create fake variable to calculate response count
+be[Q2_2<=7, RSPSN_COUNT := 1]
+
+#ensure it's sorted by year and period for lagging
+be <- setorder(be,Month)
+#calculate rolling two by vis_bin
+be[, lag_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="ProvenSR", .SDcols="Q2_2_score"]
+be[, lag_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="ProvenSR", .SDcols="RSPSN_COUNT"]
+#sum together
+be[, R2MTB := rowSums(.SD, na.rm = TRUE), .SDcols=c("Q2_2_score","lag_TB")]
+be[, R2MRSPNS := rowSums(.SD, na.rm = TRUE), .SDcols=c("RSPSN_COUNT","lag_RSPNS")]
 
 #keep only FY17 (month 4-15)
 be <- be[Month>=4&Month<=15]
@@ -321,35 +333,27 @@ be <- be[Month>=4&Month<=15]
 monthnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
 be[, fyfp :=  plyr::mapvalues(be[, Month], from = c(4:15), to = monthnames)]
 
-#rename long variables
-setnames(be,c("Q5Starbucks_TotalVisits","QSB3_MadeAnEffortToGetToKnowMe_slice"), c("visits","Q2_2"))
-
 #create frequency bins (1: 1-5, 2: 6-10, 3: 11-15, 4: 16+)
 be[visits<=5, vis_bin := 1]
 be[visits>=6&visits<=10, vis_bin := 2]
 be[visits>=11&visits<=15, vis_bin := 3]
 be[visits>=16, vis_bin := 4]
 
-#create TB variables
-be[Q2_2<7, Q2_2_score := 0]; be[Q2_2==7, Q2_2_score := 1]
-#create fake variable to calculate response count
-be[Q2_2<=7, RSPSN_COUNT := 1]
-
 #aggregate by vis_bin, ProvenSR, and month
-be <- be[, list(TB_COUNT = sum(Q2_2_score,na.rm=T),
-                RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
+be <- be[, list(R2MTB = sum(R2MTB,na.rm=T),
+                R2MRSPNS = sum(R2MRSPNS,na.rm=T)),
          by=c("vis_bin","fyfp","ProvenSR")]
 be <- setorder(be,vis_bin,fyfp,ProvenSR)
 
 #calculate TB score
-be[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+be[, tb_score := round(R2MTB/R2MRSPNS,3)]
 
 
 #bring in our data
-ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency.csv")
+ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency_v2.csv")
 
 #keep only question 2
-ce <- ce[QSTN_ID=="Q2_2"]
+# ce <- ce[QSTN_ID=="Q2_2"]
 
 #create frequency bins (1: 1-5, 2: 6-10, 3: 11-15, 4: 16+)
 ce[TRANS<=5, vis_bin := 1]
@@ -362,6 +366,20 @@ ce <- ce[, list(USER_COUNT = sum(USER_COUNT,na.rm=T),
                 TB_COUNT = sum(TB_COUNT,na.rm=T),
                 RSPSN_COUNT = sum(RSPSN_COUNT,na.rm=T)),
          by=c("vis_bin","FSCL_YR_NUM","FSCL_PER_IN_YR_NUM")]
+
+#ensure it's sorted by year and period for lagging
+ce <- setorder(ce,FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)
+#calculate rolling two by vis_bin
+ce[, lag_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="vis_bin", .SDcols="TB_COUNT"]
+ce[, lag_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="vis_bin", .SDcols="RSPSN_COUNT"]
+#sum together
+ce[, R2MTB := rowSums(.SD, na.rm = TRUE), .SDcols=c("TB_COUNT","lag_TB")]
+ce[, R2MRSPNS := rowSums(.SD, na.rm = TRUE), .SDcols=c("RSPSN_COUNT","lag_RSPNS")]
+#drop earliest month
+ce <- ce[(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM>=4)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM<=3)]
+ce[, tb_score := round(R2MTB/R2MRSPNS,3)]
+
+#create fyfp var
 ce[, tempvar := paste0(FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)]
 #mapvalues
 monthnames <- c("2017-01","2017-02","2017-03","2017-04","2017-05","2017-06","2017-07","2017-08","2017-09","2017-10","2017-11","2017-12")
@@ -369,7 +387,7 @@ ce[, fyfp :=  plyr::mapvalues(ce[, tempvar], from = unique(ce[, tempvar]), to = 
 ce[, tempvar := NULL]
 
 #calculate TB score
-ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
+# ce[, tb_score := round((TB_COUNT / RSPSN_COUNT),3)]
 
 #sort
 setorder(ce,vis_bin,fyfp)
@@ -389,7 +407,7 @@ setDT(cebe)
 xlabel <- "Time"
 ylabel <- "CC Score"
 tlabel <- "Customer Connection Trend"
-sublabel <- "January - December 2017"
+sublabel <- "January - December 2017 (Rolling 2)"
 caption <- "Customer Experience and Brand Equity Surveys"
 #manual legend labels
 lname1 <- "Survey Group"
@@ -410,15 +428,109 @@ plot2 <- ggplot(data=pdata, aes(x=px, y=py, colour=factor(colourvar), shape=fact
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
   scale_shape_discrete(name=lname2, labels=llabels2, guide=guide_legend(order=1)) +
   guides(shape = guide_legend(override.aes = list(size = 5))) + 
-  scale_y_continuous(limits=c(0,pdata[,max(py)]*1.15)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
+#do for just low freq
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+sublabel <- "Customer Connection Trend"
+tlabel <- "Low Frequency Customers (1-5 visits/month)"
+caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017 (Rolling 2)"
+#manual legend labels
+lname <- "Survey Group"
+llabels <- c("Brand Equity: Non-SR","Brand Equity: SR","Customer Experience Survey")
+#values
+pdata <- cebe[vis_bin==1]
+px <- cebe[vis_bin==1,fyfp]
+py <- cebe[vis_bin==1,tb_score]
+groupvar <- cebe[vis_bin==1,ProvenSR]
+#plot itself
+plot2 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
 
+#do for just low/mid freq
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+sublabel <- "Customer Connection Trend"
+tlabel <- "Low-Mid Frequency Customers (6-10 visits/month)"
+caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017 (Rolling 2)"
+#manual legend labels
+lname <- "Survey Group"
+llabels <- c("Brand Equity: Non-SR","Brand Equity: SR","Customer Experience Survey")
+#values
+pdata <- cebe[vis_bin==2]
+px <- cebe[vis_bin==2,fyfp]
+py <- cebe[vis_bin==2,tb_score]
+groupvar <- cebe[vis_bin==2,ProvenSR]
+#plot itself
+plot2 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
 
+#do for just mid/high freq
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+sublabel <- "Customer Connection Trend"
+tlabel <- "Mid-High Frequency Customers (11-15 visits/month)"
+caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017 (Rolling 2)"
+#manual legend labels
+lname <- "Survey Group"
+llabels <- c("Brand Equity: Non-SR","Brand Equity: SR","Customer Experience Survey")
+#values
+pdata <- cebe[vis_bin==3]
+px <- cebe[vis_bin==3,fyfp]
+py <- cebe[vis_bin==3,tb_score]
+groupvar <- cebe[vis_bin==3,ProvenSR]
+#plot itself
+plot2 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
 
-
-
+#do for just high freq
+#set labels
+xlabel <- "Time"
+ylabel <- "CC Score"
+sublabel <- "Customer Connection Trend"
+tlabel <- "High Frequency Customers (16+ visits/month)"
+caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017 (Rolling 2)"
+#manual legend labels
+lname <- "Survey Group"
+llabels <- c("Brand Equity: Non-SR","Brand Equity: SR","Customer Experience Survey")
+#values
+pdata <- cebe[vis_bin==4]
+px <- cebe[vis_bin==4,fyfp]
+py <- cebe[vis_bin==4,tb_score]
+groupvar <- cebe[vis_bin==4,ProvenSR]
+#plot itself
+plot2 <- ggplot() +
+  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+  xlab("") + ylab(ylabel) + 
+  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+  guides(colour = guide_legend(override.aes = list(size = 7))) + 
+  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+print(plot2)
 
 #do separately for each survey
 #set labels
