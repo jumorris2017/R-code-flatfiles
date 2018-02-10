@@ -253,40 +253,40 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
 # 
 # #sort by year and month
 # setorder(ce,FSCL_YR_NUM,FSCL_PER_IN_YR_NUM)
-
-#attach columns from brand equity
-cebe <- cbind(ce,hfnames,hfsr,hfnsr)
-setDT(cebe)
-cebe <- cebe[,c("hfnames","tb_score","hfsr","hfnsr"),with=FALSE]
-
-#melt by pop
-cebe <- melt(cebe,id.var="hfnames")
-
-#set labels
-xlabel <- "Time"
-ylabel <- "CC Score"
-sublabel <- "Customer Connection Trend"
-tlabel <- "Higher Frequency Customers (6+ visits/month)"
-caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017"
-#manual legend labels
-lname <- "Survey Group"
-llabels <- c("Customer Experience Survey","Brand Equity: SR","Brand Equity: Non-SR")
-#values
-pdata <- cebe
-px <- cebe[,hfnames]
-py <- cebe[,value]
-groupvar <- cebe[,variable]
-#plot itself
-plot2 <- ggplot() +
-  geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
-  xlab("") + ylab(ylabel) + 
-  scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
-  guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  #scale_x_continuous(limits=c(pdata[,min(px)],pdata[,max(px)]), breaks = scales::pretty_breaks(n = ybreaks), labels = waiver()) +
-  scale_y_continuous(limits=c(0,pdata[,max(py)])) + theme_economist() +
-  ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
-print(plot2)
-
+# 
+# #attach columns from brand equity
+# cebe <- cbind(ce,hfnames,hfsr,hfnsr)
+# setDT(cebe)
+# cebe <- cebe[,c("hfnames","tb_score","hfsr","hfnsr"),with=FALSE]
+# 
+# #melt by pop
+# cebe <- melt(cebe,id.var="hfnames")
+# 
+# #set labels
+# xlabel <- "Time"
+# ylabel <- "CC Score"
+# sublabel <- "Customer Connection Trend"
+# tlabel <- "Higher Frequency Customers (6+ visits/month)"
+# caption <- "Customer Experience Survey and Brand Equity Surveys, Jan-Dec 2017"
+# #manual legend labels
+# lname <- "Survey Group"
+# llabels <- c("Customer Experience Survey","Brand Equity: SR","Brand Equity: Non-SR")
+# #values
+# pdata <- cebe
+# px <- cebe[,hfnames]
+# py <- cebe[,value]
+# groupvar <- cebe[,variable]
+# #plot itself
+# plot2 <- ggplot() +
+#   geom_line(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=factor(groupvar))) + 
+#   xlab("") + ylab(ylabel) + 
+#   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
+#   guides(colour = guide_legend(override.aes = list(size = 7))) + 
+#   #scale_x_continuous(limits=c(pdata[,min(px)],pdata[,max(px)]), breaks = scales::pretty_breaks(n = ybreaks), labels = waiver()) +
+#   scale_y_continuous(limits=c(0,pdata[,max(py)])) + theme_economist() +
+#   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
+# print(plot2)
+# 
 
 
 
@@ -536,7 +536,7 @@ print(plot2)
 #set labels
 ylabel <- "CC Score"
 tlabel <- "Customer Experience Survey"
-sublabel <- "January - December 2017"
+sublabel <- "January - December 2017 (Rolling 2)"
 #manual legend labels
 lname2 <- "Monthly Visits"
 llabels2 <- c("1-5","6-10","11-15","16+")

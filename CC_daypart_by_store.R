@@ -8,6 +8,343 @@ library(dplyr)
 library(ggplot2)
 library(ggthemes)
 library(xlsx)
+library(patchwork)
+
+###TOPLINE COMPANY OPERATED STORES
+#LOAD DATA
+ccfy17 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+#agg fy17
+ccfy17 <- ccfy17[FSCL_YR_NUM==2017&DAY_PART>=2]
+ccfy17 <- ccfy17[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","DAY_PART")]
+ccfy17[, CC_SCORE := round(CC_SCORE*100,1)]
+#set labels
+xlabels2 <- c("AM (7-11am)","Midday (11am-2pm)","PM (2-5pm)","Late PM (5pm-close)")
+ylabel2 <- "CC Score"
+sublabel2 <- "Baseline: FY17"
+tlabel2 <- "Customer Connection Scores by Day Part"
+#values
+pdata2 <- ccfy17
+px2 <- ccfy17[,DAY_PART]
+py2 <- ccfy17[,CC_SCORE]
+nvar2 <- ccfy17[,TOTAL_RSPNS]
+#plot itself
+plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2))) + 
+  geom_bar(stat="identity", fill="lightsteelblue1", width = 0.95, position=position_dodge(), colour="black") +
+  theme_economist() +
+  scale_x_discrete(name="",labels=xlabels2) +
+  xlab("") + ylab(ylabel2) + ggtitle(tlabel2) + labs(subtitle=sublabel2) +
+  geom_text(size = 3.5, aes(label=py2,y=0), stat="identity", vjust = -2) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar2),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot2)
+
+#LOAD DATA
+ccfy18 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy18 <- ccfy18[DAY_PART>=2&DAY_PART<=4]
+ccfy18[DAY_PART==3|DAY_PART==4, MIDPM := 1];ccfy18[DAY_PART==2, MIDPM := 0]
+#agg by quarter
+ccfy18 <- ccfy18[DAY_PART>=2]
+ccfy18 <- ccfy18[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","MIDPM","FSCL_YR_NUM","FSCL_QTR_IN_YR_NUM")]
+ccfy18[, CC_SCORE := round(CC_SCORE*100,1)]
+ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
+#calculate delta
+#ensure sorted properly
+setorder(ccfy18,fyfq,MIDPM)
+ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
+#calcualte delta
+ccfy18[, ccdelta := CC_SCORE-amCC_SCORE]
+#set labels
+xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
+ylabel1a <- "CC Score"
+sublabel1a <- "Moving the Needle: Q1 FY17 - Q1 FY18"
+caption1a <- "Company Operated Stores"
+#manual legend labels
+lname1a <- "Day Part"
+llabels1a <- c("AM (7-11am)","Midday/PM (11am-5pm)")
+#values
+pdata1a <- ccfy18
+px1a <- ccfy18[,fyfq]
+py1a <- ccfy18[,CC_SCORE]
+groupvar1a <- ccfy18[,MIDPM]
+nvar1a <- ccfy18[,TOTAL_RSPNS]
+delta1a <- ccfy18[,ccdelta]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname1a, labels=llabels1a) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels1a) +
+  scale_y_continuous(limits=c(0,pdata1a[,max(py1a)]*1.25)) +
+  xlab("") + ylab(ylabel1a) + ggtitle("") + labs(subtitle=sublabel1a,caption=caption1a) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
+  geom_text(size = 4, aes(label=delta1a,y=pdata1a[,max(py1a)]), vjust=-1) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar1a),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot1a)
+plotpw <- plot2 / plot1a
+print(plotpw)
+
+
+###EXAMPLE STORE
+#LOAD DATA
+ccfy17 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy17 <- ccfy17[STORE_NUM==10038]
+#agg fy17
+ccfy17 <- ccfy17[FSCL_YR_NUM==2017&DAY_PART>=2]
+ccfy17 <- ccfy17[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","DAY_PART")]
+ccfy17[, CC_SCORE := round(CC_SCORE*100,1)]
+#set labels
+xlabels2 <- c("AM (7-11am)","Midday (11am-2pm)","PM (2-5pm)","Late PM (5pm-close)")
+ylabel2 <- "CC Score"
+sublabel2 <- "Baseline: FY17"
+tlabel2 <- "Customer Connection Scores by Day Part"
+#values
+pdata2 <- ccfy17
+px2 <- ccfy17[,DAY_PART]
+py2 <- ccfy17[,CC_SCORE]
+nvar2 <- ccfy17[,TOTAL_RSPNS]
+#plot itself
+plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2))) + 
+  geom_bar(stat="identity", fill="lightsteelblue1", width = 0.95, position=position_dodge(), colour="black") +
+  theme_economist() +
+  scale_x_discrete(name="",labels=xlabels2) +
+  xlab("") + ylab(ylabel2) + ggtitle(tlabel2) + labs(subtitle=sublabel2) +
+  geom_text(size = 3.5, aes(label=py2,y=0), stat="identity", vjust = -2) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar2),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot2)
+
+#LOAD DATA
+ccfy18 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy18 <- ccfy18[STORE_NUM==10038]
+ccfy18 <- ccfy18[DAY_PART>=2&DAY_PART<=4]
+ccfy18[DAY_PART==3|DAY_PART==4, MIDPM := 1];ccfy18[DAY_PART==2, MIDPM := 0]
+#agg by quarter
+ccfy18 <- ccfy18[DAY_PART>=2]
+ccfy18 <- ccfy18[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","MIDPM","FSCL_YR_NUM","FSCL_QTR_IN_YR_NUM")]
+ccfy18[, CC_SCORE := round(CC_SCORE*100,1)]
+ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
+#calculate delta
+#ensure sorted properly
+setorder(ccfy18,fyfq,MIDPM)
+ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
+#calcualte delta
+ccfy18[, ccdelta := CC_SCORE-amCC_SCORE]
+#set labels
+xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
+ylabel1a <- "CC Score"
+sublabel1a <- "Moving the Needle: Q1 FY17 - Q1 FY18"
+caption1a <- "Store 10038"
+#manual legend labels
+lname1a <- "Day Part"
+llabels1a <- c("AM (7-11am)","Midday/PM (11am-5pm)")
+#values
+pdata1a <- ccfy18
+px1a <- ccfy18[,fyfq]
+py1a <- ccfy18[,CC_SCORE]
+groupvar1a <- ccfy18[,MIDPM]
+nvar1a <- ccfy18[,TOTAL_RSPNS]
+delta1a <- ccfy18[,ccdelta]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname1a, labels=llabels1a) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels1a) +
+  scale_y_continuous(limits=c(0,pdata1a[,max(py1a)]*1.25)) +
+  xlab("") + ylab(ylabel1a) + ggtitle("") + labs(subtitle=sublabel1a,caption=caption1a) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
+  geom_text(size = 4, aes(label=delta1a,y=pdata1a[,max(py1a)]), vjust=-1) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar1a),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot1a)
+plotpw <- plot2 / plot1a
+print(plotpw)
+
+
+
+
+###EXAMPLE STORE
+#LOAD DATA
+ccfy17 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy17 <- ccfy17[STORE_NUM==5498]
+#agg fy17
+ccfy17 <- ccfy17[FSCL_YR_NUM==2017&DAY_PART>=2]
+ccfy17 <- ccfy17[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","DAY_PART")]
+ccfy17[, CC_SCORE := round(CC_SCORE*100,1)]
+#set labels
+xlabels2 <- c("AM (7-11am)","Midday (11am-2pm)","PM (2-5pm)","Late PM (5pm-close)")
+ylabel2 <- "CC Score"
+sublabel2 <- "Baseline: FY17"
+tlabel2 <- "Customer Connection Scores by Day Part"
+#values
+pdata2 <- ccfy17
+px2 <- ccfy17[,DAY_PART]
+py2 <- ccfy17[,CC_SCORE]
+nvar2 <- ccfy17[,TOTAL_RSPNS]
+#plot itself
+plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2))) + 
+  geom_bar(stat="identity", fill="lightsteelblue1", width = 0.95, position=position_dodge(), colour="black") +
+  theme_economist() +
+  scale_x_discrete(name="",labels=xlabels2) +
+  xlab("") + ylab(ylabel2) + ggtitle(tlabel2) + labs(subtitle=sublabel2) +
+  geom_text(size = 3.5, aes(label=py2,y=0), stat="identity", vjust = -2) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar2),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot2)
+
+#LOAD DATA
+ccfy18 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy18 <- ccfy18[STORE_NUM==5498]
+ccfy18 <- ccfy18[DAY_PART>=2&DAY_PART<=4]
+ccfy18[DAY_PART==3|DAY_PART==4, MIDPM := 1];ccfy18[DAY_PART==2, MIDPM := 0]
+#agg by quarter
+ccfy18 <- ccfy18[DAY_PART>=2]
+ccfy18 <- ccfy18[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","MIDPM","FSCL_YR_NUM","FSCL_QTR_IN_YR_NUM")]
+ccfy18[, CC_SCORE := round(CC_SCORE*100,1)]
+ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
+#calculate delta
+#ensure sorted properly
+setorder(ccfy18,fyfq,MIDPM)
+ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
+#calcualte delta
+ccfy18[, ccdelta := round(CC_SCORE-amCC_SCORE,1)]
+#set labels
+xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
+ylabel1a <- "CC Score"
+sublabel1a <- "Moving the Needle: Q1 FY17 - Q1 FY18"
+caption1a <- "Store 5498"
+#manual legend labels
+lname1a <- "Day Part"
+llabels1a <- c("AM (7-11am)","Midday/PM (11am-5pm)")
+#values
+pdata1a <- ccfy18
+px1a <- ccfy18[,fyfq]
+py1a <- ccfy18[,CC_SCORE]
+groupvar1a <- ccfy18[,MIDPM]
+nvar1a <- ccfy18[,TOTAL_RSPNS]
+delta1a <- ccfy18[,ccdelta]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname1a, labels=llabels1a) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels1a) +
+  scale_y_continuous(limits=c(0,pdata1a[,max(py1a)]*1.25)) +
+  xlab("") + ylab(ylabel1a) + ggtitle("") + labs(subtitle=sublabel1a,caption=caption1a) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
+  geom_text(size = 4, aes(label=delta1a,y=pdata1a[,max(py1a)]), vjust=-1) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar1a),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot1a)
+plotpw <- plot2 / plot1a
+print(plotpw)
+
+
+###EXAMPLE STORE
+#LOAD DATA
+ccfy17 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy17 <- ccfy17[STORE_NUM==10075]
+#agg fy17
+ccfy17 <- ccfy17[FSCL_YR_NUM==2017&DAY_PART>=2]
+ccfy17 <- ccfy17[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","DAY_PART")]
+ccfy17[, CC_SCORE := round(CC_SCORE*100,1)]
+#set labels
+xlabels2 <- c("AM (7-11am)","Midday (11am-2pm)","PM (2-5pm)","Late PM (5pm-close)")
+ylabel2 <- "CC Score"
+sublabel2 <- "Baseline: FY17"
+tlabel2 <- "Customer Connection Scores by Day Part"
+#values
+pdata2 <- ccfy17
+px2 <- ccfy17[,DAY_PART]
+py2 <- ccfy17[,CC_SCORE]
+nvar2 <- ccfy17[,TOTAL_RSPNS]
+#plot itself
+plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2))) + 
+  geom_bar(stat="identity", fill="lightsteelblue1", width = 0.95, position=position_dodge(), colour="black") +
+  theme_economist() +
+  scale_x_discrete(name="",labels=xlabels2) +
+  xlab("") + ylab(ylabel2) + ggtitle(tlabel2) + labs(subtitle=sublabel2) +
+  geom_text(size = 3.5, aes(label=py2,y=0), stat="identity", vjust = -2) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar2),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot2)
+
+#LOAD DATA
+ccfy18 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
+ccfy18 <- ccfy18[STORE_NUM==10075]
+ccfy18 <- ccfy18[DAY_PART>=2&DAY_PART<=4]
+ccfy18[DAY_PART==3|DAY_PART==4, MIDPM := 1];ccfy18[DAY_PART==2, MIDPM := 0]
+#agg by quarter
+ccfy18 <- ccfy18[DAY_PART>=2]
+ccfy18 <- ccfy18[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                        TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                        CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+                 by=c("QSTN_ID","MIDPM","FSCL_YR_NUM","FSCL_QTR_IN_YR_NUM")]
+ccfy18[, CC_SCORE := round(CC_SCORE*100,1)]
+ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
+#calculate delta
+#ensure sorted properly
+setorder(ccfy18,fyfq,MIDPM)
+ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
+#calcualte delta
+ccfy18[, ccdelta := round(CC_SCORE-amCC_SCORE,1)]
+#set labels
+xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
+ylabel1a <- "CC Score"
+sublabel1a <- "Moving the Needle: Q1 FY17 - Q1 FY18"
+caption1a <- "Store 10075"
+#manual legend labels
+lname1a <- "Day Part"
+llabels1a <- c("AM (7-11am)","Midday/PM (11am-5pm)")
+#values
+pdata1a <- ccfy18
+px1a <- ccfy18[,fyfq]
+py1a <- ccfy18[,CC_SCORE]
+groupvar1a <- ccfy18[,MIDPM]
+nvar1a <- ccfy18[,TOTAL_RSPNS]
+delta1a <- ccfy18[,ccdelta]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname1a, labels=llabels1a) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels1a) +
+  scale_y_continuous(limits=c(0,pdata1a[,max(py1a)]*1.25)) +
+  xlab("") + ylab(ylabel1a) + ggtitle("") + labs(subtitle=sublabel1a,caption=caption1a) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
+  geom_text(size = 4, aes(label=delta1a,y=pdata1a[,max(py1a)]), vjust=-1) +
+  geom_text(size = 3, aes(label=paste0("n=",nvar1a),y=0), stat="identity", vjust = -.75, position = position_dodge(0.95))
+print(plot1a)
+plotpw <- plot2 / plot1a
+print(plotpw)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #load data
 cs0q <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_bystore_2months.csv") #2months
@@ -930,16 +1267,6 @@ print(plot2)
 
 
 
-
-
-
-
-
-
-
-
-
-
 #average number of surveys per store, across the day
 #load data
 cs1q <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_bystore_1quarter.csv") #1 quarter
@@ -959,7 +1286,7 @@ str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
 str2m[, FPFY := as.numeric(FPFY)]
 str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
 #calculate cc delta
-str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="cc_score"]
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="cc_score"]
 str2m[, r2mccdel := cc_score-lag_R2MCC]
 #keep only the latest period for plot
 str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
@@ -996,7 +1323,7 @@ str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
 str2m[, FPFY := as.numeric(FPFY)]
 str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
 #calculate cc delta
-str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="R2MCC"]
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
 str2m[, r2mccdel := R2MCC-lag_R2MCC]
 #keep only the latest period for plot
 str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
@@ -1034,11 +1361,32 @@ str2m[, R2MCC := round(R2MTB/R2MRSPNS,3)*100]
 str2m[, FPFY := paste0(FSCL_YR_NUM,".",FSCL_PER_IN_YR_NUM)]
 str2m[, FPFY := as.numeric(FPFY)]
 str2m[, FPFYlabel := paste0(FSCL_YR_NUM,"-",FSCL_PER_IN_YR_NUM)]
+
+# #percent that vary more than 10%
+# str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3, mean(R2MCC,na.rm=T)]
+# str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==2, mean(R2MCC,na.rm=T)]
+# str2m[FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM==12, mean(R2MCC,na.rm=T)]
+#get delta for one month diff (dec3-nov3)
+#keep only the latest period for plot
+str2roll <- str2m[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==2)]
+str2roll[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
+str2roll[, r2mccdel := R2MCC-lag_R2MCC]
+str2roll <- str2roll[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+#get delta for 3 month snapshot diff (dec3-sept3)
+str2snap <- str2m[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)|(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM==12)]
+str2snap[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
+str2snap[, r2mccdel := R2MCC-lag_R2MCC]
+str2snap <- str2snap[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)]
+#end this portion
+
 #calculate delta
-str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="R2MCC"]
+str2m[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
 str2m[, r2mccdel := R2MCC-lag_R2MCC]
 #keep only the latest period for plot
 str2m <- str2m[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+
+# nrow(str2roll[r2mccdel>=10|r2mccdel<=(-10)]) / nrow(str2roll)
+# nrow(str2snap[r2mccdel>=10|r2mccdel<=(-10)]) / nrow(str2snap)
 
 #set labels
 xlabel <- "CC Score Delta"
@@ -1080,3 +1428,62 @@ plot1 <- ggplot() +
   scale_y_continuous(limits=c(0,.4),labels=scales::percent) +
   labs(title = tlabel)
 print(plot1)
+
+
+
+
+
+
+
+#load data
+str3 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_bystore_rolling3periods.csv")
+#restrict to PM
+str3 <- str3[DAY_PART==4]
+#calculate rolling two by day part
+str3[, lag_TB :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_TB"]
+str3[, lag_RSPNS :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="TOTAL_RSPNS"]
+#sum together
+str3[, R2MTB := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_TB","lag_TB")]
+str3[, R2MRSPNS := rowSums(.SD, na.rm = TRUE), .SDcols=c("TOTAL_RSPNS","lag_RSPNS")]
+#drop earliest month
+str3 <- str3[(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM>=12)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM<=3)]
+str3[, R2MCC := round(R2MTB/R2MRSPNS,3)*100]
+#calculate cc delta
+str3[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), .SDcols="R2MCC"]
+str3[, r2mccdel := R2MCC-lag_R2MCC]
+
+#keep only the latest period for plot
+str3roll <- str3[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)|(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==2)]
+str3roll[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
+str3roll[, r2mccdel := R2MCC-lag_R2MCC]
+str3roll <- str3roll[FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3]
+#get delta for 3 month snapshot diff (dec3-sept3)
+str3snap <- str3[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)|(FSCL_YR_NUM==2017&FSCL_PER_IN_YR_NUM==12)]
+str3snap[, lag_R2MCC :=lapply(.SD, function(x) c(NA, x[-.N])), by="STORE_NUM", .SDcols="R2MCC"]
+str3snap[, r2mccdel := R2MCC-lag_R2MCC]
+str3snap <- str3snap[(FSCL_YR_NUM==2018&FSCL_PER_IN_YR_NUM==3)]
+# nrow(str3roll[r2mccdel>=10|r2mccdel<=(-10)]) / nrow(str3roll)
+# nrow(str3snap[r2mccdel>=10|r2mccdel<=(-10)]) / nrow(str3snap)
+
+
+
+
+
+
+
+
+#percent of stores that reach 50+ surveys when combining Midday/PM in 3 months
+cs1q <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_bystore_1quarter.csv") #1 quarter
+cs1q[DAY_PART==3|DAY_PART==4, DAY_PART2 := 'midpm'];cs1q[DAY_PART<=2|DAY_PART==5, DAY_PART2 := 'amlpm']
+cs1q <- cs1q[STORE_NUM %in% unique(cs0q[,STORE_NUM])&STORE_NUM %in% unique(cs8q[,STORE_NUM]), 
+             list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
+                  TOTAL_RSPNS = sum(TOTAL_RSPNS,na.rm=T),
+                  CC_SCORE = sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),
+             by=c("STORE_NUM","QSTN_ID","DAY_PART2")]
+cs1q[TOTAL_RSPNS>=50, resp_over50 := 1]; cs1q[TOTAL_RSPNS<50, resp_over50 := 0]
+temp1 <- cs1q %>%
+   group_by(DAY_PART2,resp_over50) %>%
+   summarise (storeN50 = n()) %>%
+   mutate(pct50 = round(storeN50 / sum(storeN50),3)*100)
+setDT(temp1)
+setorder(temp1,resp_over50,DAY_PART)
