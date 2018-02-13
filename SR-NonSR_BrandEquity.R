@@ -555,3 +555,90 @@ plot3 <- ggplot(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=facto
   ggtitle(tlabel) + labs(subtitle=sublabel)
 print(plot3)
 
+
+##EXPERIAN DEMOS
+#load data
+experian <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/GUIDs_from_experian.csv")
+setnames(experian,"GUID_USER_ID","GUID_ID")
+guids_cesr <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/GUIDs_for_experian_ceSR.csv")
+#remove duplicates
+guids_cesr <- subset(guids_cesr, !duplicated(guids_cesr$GUID_ID))
+#drop transaction indicator (redundant variable with experian data)
+guids_cesr[, TRANS := NULL]
+#add CE flag
+guids_cesr[, CEtaker := 1]
+#merge into experian data
+experian <- merge(experian,guids_cesr,all.x=T,by="GUID_ID")
+#if CE taker is null, make it 0
+experian[is.na(CEtaker), CEtaker := 0]
+
+#recode the demographic variables
+#sex
+experian[GENDER=="M", female := 0]; experian[GENDER=="F", female := 1]
+#income
+experian[EST_HOUSEHOLD_INCOME_V5=="A", inc_midpt := 6999.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="B", inc_midpt := 19999]
+experian[EST_HOUSEHOLD_INCOME_V5=="C", inc_midpt := 29999]
+experian[EST_HOUSEHOLD_INCOME_V5=="D", inc_midpt := 42499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="E", inc_midpt := 62499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="F", inc_midpt := 87499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="G", inc_midpt := 112499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="H", inc_midpt := 137499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="I", inc_midpt := 162499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="J", inc_midpt := 162499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="K", inc_midpt := 187499.5]
+experian[EST_HOUSEHOLD_INCOME_V5=="L", inc_midpt := 250000]
+#education - make binary college grad
+experian[EDUCATION_MODEL==11|EDUCATION_MODEL==15|EDUCATION_MODEL==51|EDUCATION_MODEL==55, collegegrad := 0]
+experian[(EDUCATION_MODEL>=12&EDUCATION_MODEL<=14)|(EDUCATION_MODEL>=52&EDUCATION_MODEL<=54), collegegrad := 1]
+#remove letters from age variable
+experian[, age := as.numeric(gsub("[^0-9.]", "", COMBINED_AGE))]
+#marital status
+experian[MARITAL_STATUS=="5S", married := 0]
+experian[MARITAL_STATUS=="1M"|MARITAL_STATUS=="5M", married := 1]
+
+#create frequency bins (1: 1-5, 2: 6-10, 3: 11-15, 4: 16+)
+experian[TRANS<=5, vis_bin := 1]
+experian[TRANS>=6&TRANS<=10, vis_bin := 2]
+experian[TRANS>=11&TRANS<=15, vis_bin := 3]
+experian[TRANS>=16, vis_bin := 4]
+
+#get percentages
+temp <- experian %>% group_by(CEtaker,vis_bin) %>%
+  summarise(collegegrad = round(mean(collegegrad,na.rm=T),3)*100,
+            age = round(mean(age,na.rm=T),1),
+            married = round(mean(married,na.rm=T),3)*100,
+            female = round(mean(female,na.rm=T),3)*100,
+            inc_med = median(inc_midpt,na.rm=T))
+setDT(temp)
+
+temp2 <- experian %>% group_by(CEtaker) %>%
+  summarise(collegegrad = round(mean(collegegrad,na.rm=T),3)*100,
+            age = round(mean(age,na.rm=T),1),
+            married = round(mean(married,na.rm=T),3)*100,
+            female = round(mean(female,na.rm=T),3)*100,
+            inc_med = median(inc_midpt,na.rm=T))
+setDT(temp2)
+
+temp3 <- experian %>% group_by(vis_bin) %>%
+  summarise(collegegrad = round(mean(collegegrad,na.rm=T),3)*100,
+            age = round(mean(age,na.rm=T),1),
+            married = round(mean(married,na.rm=T),3)*100,
+            female = round(mean(female,na.rm=T),3)*100,
+            inc_med = median(inc_midpt,na.rm=T))
+setDT(temp3)
+
+temp4 <- experian %>% 
+  summarise(collegegrad = round(mean(collegegrad,na.rm=T),3)*100,
+            age = round(mean(age,na.rm=T),1),
+            married = round(mean(married,na.rm=T),3)*100,
+            female = round(mean(female,na.rm=T),3)*100,
+            inc_med = median(inc_midpt,na.rm=T))
+setDT(temp4)
+
+#t tests
+t.test(experian[CEtaker==0,collegegrad],experian[CEtaker==1,collegegrad])
+t.test(experian[CEtaker==0,age],experian[CEtaker==1,age])
+t.test(experian[CEtaker==0,married],experian[CEtaker==1,married])
+t.test(experian[CEtaker==0,female],experian[CEtaker==1,female])
+
