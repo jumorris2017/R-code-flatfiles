@@ -561,6 +561,11 @@ print(plot3)
 experian <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/GUIDs_from_experian.csv")
 setnames(experian,"GUID_USER_ID","GUID_ID")
 guids_cesr <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/GUIDs_for_experian_ceSR.csv")
+guids_so <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/GUIDs_soscores_ceSR.csv")
+setnames(guids_so,"GUID_USER_ID","GUID_ID")
+guids_so <- guids_so[GUID_ID %in% guids_cesr[,GUID_ID]]
+#swing so data wide
+sow <- dcast.data.table(guids_so, GUID_ID ~ QSTN_ID, value.var=c("TOTAL_TB","TOTAL_RSPNS"))
 #remove duplicates
 guids_cesr <- subset(guids_cesr, !duplicated(guids_cesr$GUID_ID))
 #drop transaction indicator (redundant variable with experian data)
@@ -569,6 +574,7 @@ guids_cesr[, TRANS := NULL]
 guids_cesr[, CEtaker := 1]
 #merge into experian data
 experian <- merge(experian,guids_cesr,all.x=T,by="GUID_ID")
+experian <- merge(experian,sow,all.x=T,by="GUID_ID")
 #if CE taker is null, make it 0
 experian[is.na(CEtaker), CEtaker := 0]
 
@@ -593,6 +599,11 @@ experian[EDUCATION_MODEL==11|EDUCATION_MODEL==15|EDUCATION_MODEL==51|EDUCATION_M
 experian[(EDUCATION_MODEL>=12&EDUCATION_MODEL<=14)|(EDUCATION_MODEL>=52&EDUCATION_MODEL<=54), collegegrad := 1]
 #remove letters from age variable
 experian[, age := as.numeric(gsub("[^0-9.]", "", COMBINED_AGE))]
+#make age category variables
+experian[age>=21&age<=36, age_cat := 1] #millennials
+experian[age>=37&age<=52, age_cat := 2] #generation x
+experian[age>=53&age<=71, age_cat := 3] #baby boomers
+
 #marital status
 experian[MARITAL_STATUS=="5S", married := 0]
 experian[MARITAL_STATUS=="1M"|MARITAL_STATUS=="5M", married := 1]
@@ -602,6 +613,113 @@ experian[TRANS<=5, vis_bin := 1]
 experian[TRANS>=6&TRANS<=10, vis_bin := 2]
 experian[TRANS>=11&TRANS<=15, vis_bin := 3]
 experian[TRANS>=16, vis_bin := 4]
+
+#cc scores by age
+cc <- experian[!is.na(age_cat)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(age_cat) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+
+#melt for plotting
+cc[, respN := NULL]
+ccm <- melt(cc,id="age_cat")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+# #add fake var for colouring on plot
+# ccm[variable!="cc_score"&variable!="ceso_score", colvar := 0]
+# ccm[variable=="cc_score"|variable=="ceso_score", colvar := 1]
+
+#plot 1: customer connection from brand equity
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Generation"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Millennials (21-36), Generation X (37-52), Baby Boomers (23-71)\nDemographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Generation"
+llabels <- c("Millennials", "Generation X", "Baby Boomers")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,age_cat]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+  #geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+#cc scores by age
+cc <- experian[!is.na(female)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(female) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+
+#melt for plotting
+cc[, respN := NULL]
+ccm <- melt(cc,id="age_cat")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 1: customer connection from brand equity
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Generation"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Millennials (21-36), Generation X (37-52), Baby Boomers (23-71)\nDemographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Generation"
+llabels <- c("Millennials", "Generation X", "Baby Boomers")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,age_cat]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+#geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+
+
+
+
+
 
 #get percentages
 temp <- experian %>% group_by(CEtaker,vis_bin) %>%

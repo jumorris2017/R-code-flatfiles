@@ -9,6 +9,7 @@ library(ggplot2)
 library(ggthemes)
 library(xlsx)
 library(patchwork)
+library("wesanderson")
 
 ###TOPLINE COMPANY OPERATED STORES
 #LOAD DATA
@@ -76,7 +77,7 @@ delta1a <- ccfy18[,ccdelta]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname1a, labels=llabels1a) + theme_economist() +
+  scale_fill_manual(values = wes_palette("Zissou1"), name=lname1a, labels=llabels1a) + theme_economist() +
   scale_x_discrete(name="",labels=xlabels1a) +
   scale_y_continuous(limits=c(0,pdata1a[,max(py1a)]*1.25)) +
   xlab("") + ylab(ylabel1a) + ggtitle("") + labs(subtitle=sublabel1a,caption=caption1a) +
