@@ -594,6 +594,19 @@ experian[EST_HOUSEHOLD_INCOME_V5=="I", inc_midpt := 162499.5]
 experian[EST_HOUSEHOLD_INCOME_V5=="J", inc_midpt := 162499.5]
 experian[EST_HOUSEHOLD_INCOME_V5=="K", inc_midpt := 187499.5]
 experian[EST_HOUSEHOLD_INCOME_V5=="L", inc_midpt := 250000]
+#income
+experian[EST_HOUSEHOLD_INCOME_V5=="A", inc_75k := 0]
+experian[EST_HOUSEHOLD_INCOME_V5=="B", inc_75k := 0]
+experian[EST_HOUSEHOLD_INCOME_V5=="C", inc_75k := 0]
+experian[EST_HOUSEHOLD_INCOME_V5=="D", inc_75k := 0]
+experian[EST_HOUSEHOLD_INCOME_V5=="E", inc_75k := 0]
+experian[EST_HOUSEHOLD_INCOME_V5=="F", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="G", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="H", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="I", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="J", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="K", inc_75k := 1]
+experian[EST_HOUSEHOLD_INCOME_V5=="L", inc_75k := 1]
 #education - make binary college grad
 experian[EDUCATION_MODEL==11|EDUCATION_MODEL==15|EDUCATION_MODEL==51|EDUCATION_MODEL==55, collegegrad := 0]
 experian[(EDUCATION_MODEL>=12&EDUCATION_MODEL<=14)|(EDUCATION_MODEL>=52&EDUCATION_MODEL<=54), collegegrad := 1]
@@ -666,7 +679,7 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   #geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
 print(plot1a)
 
-#cc scores by age
+#cc scores by gender
 cc <- experian[!is.na(female)] %>%
   filter(CEtaker %in% 1) %>%
   group_by(female) %>%
@@ -683,7 +696,7 @@ cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
 
 #melt for plotting
 cc[, respN := NULL]
-ccm <- melt(cc,id="age_cat")
+ccm <- melt(cc,id="female")
 preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
                      "so3_score","so4_score","so5_score","so6_score")
 ccm[, variable := factor(variable, levels=preferred.order)]
@@ -694,17 +707,115 @@ ccm[, value := round(value,0)]
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
-tlabel <- "Customer Experience by Generation"
+tlabel <- "Customer Experience by Gender"
 sublabel <- "Customer Experience Study, December FY18"
-caption <- "Millennials (21-36), Generation X (37-52), Baby Boomers (23-71)\nDemographic data from Alteryx, Update January FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
 #manual legend labels
-lname <- "Generation"
-llabels <- c("Millennials", "Generation X", "Baby Boomers")
+lname <- "Gender"
+llabels <- c("Male", "Female")
 #values
 pdata1a <- ccm
 px1a <- ccm[,variable]
 py1a <- ccm[,value]
-groupvar1a <- ccm[,age_cat]
+groupvar1a <- ccm[,female]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+#geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+#cc scores by education level
+cc <- experian[!is.na(collegegrad)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(collegegrad) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+
+#melt for plotting
+cc[, respN := NULL]
+ccm <- melt(cc,id="collegegrad")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 1: customer connection from brand equity
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level"
+llabels <- c("No College Degree", "College Degree+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,collegegrad]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+#geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+#cc scores by marital status
+cc <- experian[!is.na(married)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(married) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+
+#melt for plotting
+cc[, respN := NULL]
+ccm <- melt(cc,id="married")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 1: customer connection from brand equity
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Marital Status"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Marital Status"
+llabels <- c("Single", "Married/Partnered")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,married]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
@@ -716,6 +827,54 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
 print(plot1a)
 
 
+#cc scores by income
+cc <- experian[!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+
+#melt for plotting
+cc[, respN := NULL]
+ccm <- melt(cc,id="inc_75k")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 1: customer connection from brand equity
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Household Income"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Household Income"
+llabels <- c("<$75,000", "$75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,inc_75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+#geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
 
 
 
@@ -754,9 +913,39 @@ temp4 <- experian %>%
             inc_med = median(inc_midpt,na.rm=T))
 setDT(temp4)
 
-#t tests
+#t tests - CE SR population vs SR (non-CE) population
 t.test(experian[CEtaker==0,collegegrad],experian[CEtaker==1,collegegrad])
 t.test(experian[CEtaker==0,age],experian[CEtaker==1,age])
 t.test(experian[CEtaker==0,married],experian[CEtaker==1,married])
 t.test(experian[CEtaker==0,female],experian[CEtaker==1,female])
 
+
+
+#for t-tests
+cct <- experian[CEtaker==1, list(cc_score = TOTAL_TB/TOTAL_RSPNS,
+            so1_score = TOTAL_TB_Q2_1/TOTAL_RSPNS_Q2_1,
+            so2_score = TOTAL_TB_Q2_3/TOTAL_RSPNS_Q2_3,
+            so3_score = TOTAL_TB_Q2_4/TOTAL_RSPNS_Q2_4,
+            so4_score = TOTAL_TB_Q2_5/TOTAL_RSPNS_Q2_5,
+            so5_score = TOTAL_TB_Q2_6/TOTAL_RSPNS_Q2_6,
+            so6_score = TOTAL_TB_Q2_7/TOTAL_RSPNS_Q2_7),
+            by=c("GUID_ID","collegegrad","female","age_cat","married","vis_bin","inc_75k")]
+setDT(cct)
+cct[, ceso_score := rowMeans(.SD), .SDcols=colnames(cct)[9:ncol(cct)]]
+
+t.test(cct[collegegrad==0,cc_score],cct[collegegrad==1,cc_score])
+t.test(cct[collegegrad==0,ceso_score],cct[collegegrad==1,ceso_score])
+
+t.test(cct[married==0,cc_score],cct[married==1,cc_score])
+t.test(cct[married==0,ceso_score],cct[married==1,ceso_score])
+
+t.test(cct[inc_75k==0,cc_score],cct[inc_75k==1,cc_score])
+t.test(cct[inc_75k==0,ceso_score],cct[inc_75k==1,ceso_score])
+
+t.test(cct[female==0,cc_score],cct[female==1,cc_score])
+t.test(cct[female==0,ceso_score],cct[female==1,ceso_score])
+
+t.test(cct[age_cat==1,cc_score],cct[age_cat==2,cc_score])
+t.test(cct[age_cat==2,cc_score],cct[age_cat==3,cc_score])
+t.test(cct[age_cat==1,ceso_score],cct[age_cat==2,ceso_score])
+t.test(cct[age_cat==2,ceso_score],cct[age_cat==3,ceso_score])
