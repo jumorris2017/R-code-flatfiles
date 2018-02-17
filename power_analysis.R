@@ -12,7 +12,9 @@ library(ggplot2)
 library(tidyverse)
 
 #load data
-sppa <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/power_analysis_speed.csv") #speed scores by store
+sppa <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/power_analysis_speed_mop.csv") #speed scores by store
+setnames(sppa, c("TB_COUNT","RSPNS_COUNT"),c("Q2_1_TB_CNT","Q2_1_RESPONSE_TOTAL"))
+sppa[, Q2_1_TB_SCORE := Q2_1_TB_CNT/Q2_1_RESPONSE_TOTAL]
 
 #one week
 #summarise mean and standard deviation

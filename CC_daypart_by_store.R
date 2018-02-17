@@ -58,7 +58,7 @@ ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
 setorder(ccfy18,fyfq,MIDPM)
 ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
 #calcualte delta
-ccfy18[, ccdelta := CC_SCORE-amCC_SCORE]
+ccfy18[, ccdelta := round(CC_SCORE-amCC_SCORE,1)]
 #set labels
 xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
 ylabel1a <- "CC Score"
@@ -92,7 +92,7 @@ print(plotpw)
 ###EXAMPLE STORE
 #LOAD DATA
 ccfy17 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
-ccfy17 <- ccfy17[STORE_NUM==10038]
+ccfy17 <- ccfy17[STORE_NUM==6954]
 #agg fy17
 ccfy17 <- ccfy17[FSCL_YR_NUM==2017&DAY_PART>=2]
 ccfy17 <- ccfy17[, list(TOTAL_TB = sum(TOTAL_TB,na.rm=T),
@@ -122,7 +122,7 @@ print(plot2)
 
 #LOAD DATA
 ccfy18 <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/CC_daypart_fy17.csv")
-ccfy18 <- ccfy18[STORE_NUM==10038]
+ccfy18 <- ccfy18[STORE_NUM==6954]
 ccfy18 <- ccfy18[DAY_PART>=2&DAY_PART<=4]
 ccfy18[DAY_PART==3|DAY_PART==4, MIDPM := 1];ccfy18[DAY_PART==2, MIDPM := 0]
 #agg by quarter
@@ -138,12 +138,12 @@ ccfy18[, fyfq := paste0(FSCL_YR_NUM,"-",FSCL_QTR_IN_YR_NUM)]
 setorder(ccfy18,fyfq,MIDPM)
 ccfy18[, amCC_SCORE :=lapply(.SD, function(x) c(NA, x[-.N])), by="fyfq", .SDcols="CC_SCORE"]
 #calcualte delta
-ccfy18[, ccdelta := CC_SCORE-amCC_SCORE]
+ccfy18[, ccdelta := round(CC_SCORE-amCC_SCORE,1)]
 #set labels
 xlabels1a <- c("Q1 FY17","Q2 FY17","Q3 FY17","Q4 FY17","Q1 FY18")
 ylabel1a <- "CC Score"
 sublabel1a <- "Moving the Needle: Q1 FY17 - Q1 FY18"
-caption1a <- "Store 10038"
+caption1a <- "Store 6954"
 #manual legend labels
 lname1a <- "Day Part"
 llabels1a <- c("AM (7-11am)","Midday/PM (11am-5pm)")
