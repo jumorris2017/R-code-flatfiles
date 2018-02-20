@@ -650,11 +650,8 @@ preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
 ccm[, variable := factor(variable, levels=preferred.order)]
 ccm <- setorder(ccm,variable)
 ccm[, value := round(value,0)]
-# #add fake var for colouring on plot
-# ccm[variable!="cc_score"&variable!="ceso_score", colvar := 0]
-# ccm[variable=="cc_score"|variable=="ceso_score", colvar := 1]
 
-#plot 1: customer connection from brand equity
+#plot 1: 
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
@@ -703,7 +700,7 @@ ccm[, variable := factor(variable, levels=preferred.order)]
 ccm <- setorder(ccm,variable)
 ccm[, value := round(value,0)]
 
-#plot 1: customer connection from brand equity
+#plot 1: 
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
@@ -752,7 +749,7 @@ ccm[, variable := factor(variable, levels=preferred.order)]
 ccm <- setorder(ccm,variable)
 ccm[, value := round(value,0)]
 
-#plot 1: customer connection from brand equity
+#plot 1: 
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
@@ -801,7 +798,7 @@ ccm[, variable := factor(variable, levels=preferred.order)]
 ccm <- setorder(ccm,variable)
 ccm[, value := round(value,0)]
 
-#plot 1: customer connection from brand equity
+#plot 1: 
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
@@ -851,7 +848,7 @@ ccm[, variable := factor(variable, levels=preferred.order)]
 ccm <- setorder(ccm,variable)
 ccm[, value := round(value,0)]
 
-#plot 1: customer connection from brand equity
+#plot 1: 
 #set labels
 xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
 ylabel <- "TB Score"
@@ -875,6 +872,340 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
 #geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
 print(plot1a)
+
+
+
+
+##interactions
+#cc scores by education level AND income
+cc <- experian[!is.na(collegegrad)&!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(collegegrad,inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, cg_inc75k := paste0(collegegrad,"-",inc_75k)]
+
+#melt for plotting
+cc[, c("collegegrad","inc_75k") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id=c("cg_inc75k"))
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 2: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level & Household Income"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level & Household Income"
+llabels <- c("No BA <$75,000", "No BA $75,000+",
+             "BA+ <$75,000", "BA+ $75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,cg_inc75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) + 
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+
+##frequency bin #1
+#cc scores by education level AND income
+cc <- experian[!is.na(collegegrad)&!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>% filter(vis_bin %in% 1) %>%
+  group_by(collegegrad,inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, cg_inc75k := paste0(collegegrad,"-",inc_75k)]
+
+#melt for plotting
+cc[, c("collegegrad","inc_75k") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id=c("cg_inc75k"))
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 2: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level & Household Income, 1-5 Visits/Month"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level & Household Income"
+llabels <- c("No BA <$75,000", "No BA $75,000+",
+             "BA+ <$75,000", "BA+ $75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,cg_inc75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) + 
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+##frequency bin #2
+#cc scores by education level AND income
+cc <- experian[!is.na(collegegrad)&!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>% filter(vis_bin %in% 2) %>%
+  group_by(collegegrad,inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, cg_inc75k := paste0(collegegrad,"-",inc_75k)]
+
+#melt for plotting
+cc[, c("collegegrad","inc_75k") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id=c("cg_inc75k"))
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 2: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level & Household Income, 6-10 Visits/Month"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level & Household Income"
+llabels <- c("No BA <$75,000", "No BA $75,000+",
+             "BA+ <$75,000", "BA+ $75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,cg_inc75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) + 
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+##frequency bin #3
+#cc scores by education level AND income
+cc <- experian[!is.na(collegegrad)&!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>% filter(vis_bin %in% 3) %>%
+  group_by(collegegrad,inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, cg_inc75k := paste0(collegegrad,"-",inc_75k)]
+
+#melt for plotting
+cc[, c("collegegrad","inc_75k") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id=c("cg_inc75k"))
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 2: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level & Household Income, 11-15 Visits/Month"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level & Household Income"
+llabels <- c("No BA <$75,000", "No BA $75,000+",
+             "BA+ <$75,000", "BA+ $75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,cg_inc75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) + 
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+
+##frequency bin #4
+#cc scores by education level AND income
+cc <- experian[!is.na(collegegrad)&!is.na(inc_75k)] %>%
+  filter(CEtaker %in% 1) %>% filter(vis_bin %in% 4) %>%
+  group_by(collegegrad,inc_75k) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, cg_inc75k := paste0(collegegrad,"-",inc_75k)]
+
+#melt for plotting
+cc[, c("collegegrad","inc_75k") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id=c("cg_inc75k"))
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 2: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Education Level & Household Income, 16+ Visits/Month"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Demographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Education Level & Household Income"
+llabels <- c("No BA <$75,000", "No BA $75,000+",
+             "BA+ <$75,000", "BA+ $75,000+")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,cg_inc75k]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) + 
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+
+
+#cc scores by age
+cc <- experian[!is.na(age_cat)&!is.na(female)] %>%
+  filter(CEtaker %in% 1) %>%
+  group_by(age_cat,female) %>%
+  summarise(respN = sum(TOTAL_RSPNS,na.rm=T),
+            cc_score = round((sum(TOTAL_TB,na.rm=T)/sum(TOTAL_RSPNS,na.rm=T)),3)*100,
+            so1_score = round((sum(TOTAL_TB_Q2_1,na.rm=T)/sum(TOTAL_RSPNS_Q2_1,na.rm=T)),3)*100,
+            so2_score = round((sum(TOTAL_TB_Q2_3,na.rm=T)/sum(TOTAL_RSPNS_Q2_3,na.rm=T)),3)*100,
+            so3_score = round((sum(TOTAL_TB_Q2_4,na.rm=T)/sum(TOTAL_RSPNS_Q2_4,na.rm=T)),3)*100,
+            so4_score = round((sum(TOTAL_TB_Q2_5,na.rm=T)/sum(TOTAL_RSPNS_Q2_5,na.rm=T)),3)*100,
+            so5_score = round((sum(TOTAL_TB_Q2_6,na.rm=T)/sum(TOTAL_RSPNS_Q2_6,na.rm=T)),3)*100,
+            so6_score = round((sum(TOTAL_TB_Q2_7,na.rm=T)/sum(TOTAL_RSPNS_Q2_7,na.rm=T)),3)*100)
+setDT(cc)
+cc[, ceso_score := rowMeans(.SD), .SDcols=colnames(cc)[4:ncol(cc)]]
+#make interaction variable
+cc[, fem_agecat := paste0(female,"-",age_cat)]
+
+#melt for plotting
+cc[, c("age_cat","female") := NULL]
+cc[, respN := NULL]
+ccm <- melt(cc,id="fem_agecat")
+preferred.order <- c("cc_score","ceso_score","so1_score","so2_score",
+                     "so3_score","so4_score","so5_score","so6_score")
+ccm[, variable := factor(variable, levels=preferred.order)]
+ccm <- setorder(ccm,variable)
+ccm[, value := round(value,0)]
+
+#plot 1: 
+#set labels
+xlabels <- c("Customer Connection","Store Ops","Speed","Above & Beyond","Accuracy","Bev Taste","Food Taste","Cleanliness")
+ylabel <- "TB Score"
+tlabel <- "Customer Experience by Gender & Generation"
+sublabel <- "Customer Experience Study, December FY18"
+caption <- "Millennials (21-36), Generation X (37-52), Baby Boomers (23-71)\nDemographic data from Alteryx, Update January FY18"
+#manual legend labels
+lname <- "Gender & Generation"
+llabels <- c("Millennial Males", "Generation X Males", "Boomers Males", "Millennial Females", "Generation X Females","Boomers Females")
+#values
+pdata1a <- ccm
+px1a <- ccm[,variable]
+py1a <- ccm[,value]
+groupvar1a <- ccm[,fem_agecat]
+#plot itself
+plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
+  geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_x_discrete(name="",labels=xlabels) +
+  xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
+  geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
+print(plot1a)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
