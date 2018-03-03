@@ -8,7 +8,7 @@ library(forecast)
 library(utils)
 
 #load data (from Megan)
-hc <- fread("O:/CoOp/CoOp194_PROReportng&OM/Megan/StoreRisk/EverythingEver.csv")
+hc <- fread("O:/CoOp/CoOp194_PROReportng&OM/Megan/StoreRisk/EverythingEverJan.csv")
 
 #reduce variables
 # temp <- hc[, c("StoreNum","FP","FY",grep("barista",colnames(hc),value=T),grep("shift",colnames(hc),value=T)), with=F]
