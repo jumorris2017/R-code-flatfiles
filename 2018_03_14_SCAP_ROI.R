@@ -149,28 +149,49 @@ dt[, SEPARATION_DT := NULL]
 #turn NA's to 0's
 dt[is.na(dt)] <- 0
 
+#tenure on dec 31, 2015
+#2015
+dt[, hiredate := as.Date(MOST_RECENT_HIRE_DT)]
+dt[wasapartnerin2015==1, tempdt := as.Date(ymd('2015-12-25'))]
+dt[wasapartnerin2015==1, tenure15yrs := as.numeric(difftime(tempdt, hiredate), units = c("days"))]
+dt[wasapartnerin2015==1, tenure15yrs := round(tenure15yrs/365,1)]
+#2016
+dt[wasapartnerin2016==1, tempdt := as.Date(ymd('2016-12-25'))]
+dt[wasapartnerin2016==1, tenure16yrs := as.numeric(difftime(tempdt, hiredate), units = c("days"))]
+dt[wasapartnerin2016==1, tenure16yrs := round(tenure16yrs/365,1)]
+#2017
+dt[wasapartnerin2017==1, tempdt := as.Date(ymd('2017-12-25'))]
+dt[wasapartnerin2017==1, tenure17yrs := as.numeric(difftime(tempdt, hiredate), units = c("days"))]
+dt[wasapartnerin2017==1, tenure17yrs := round(tenure17yrs/365,1)]
+#remove fake var
+dt[, tempdt := NULL]
+
 #ok - benefits time!
 #logic: for active 2015 partners who used XYZ benefit, what is the separation by end of 2015 rate
 #2015
 dt15sip <- dt[wasapartnerin2015==1, list(benefit = "sip", partnerN = .N,
+                                         avgtenure = mean(tenure15yrs,na.rm=T),
                                          activeyearend = sum(active2015end,na.rm=T),
                                          sepduringyear = sum(sepduring2015,na.rm=T),
                                          sep_over_hec = sum(sepduring2015,na.rm=T)/(sum(sepduring2015,na.rm=T)+sum(active2015end,na.rm=T))),
               by="sip2015"]
 setnames(dt15sip,"sip2015","utilization")
 dt15bft <- dt[wasapartnerin2015==1, list(benefit = "bft", partnerN = .N,
+                                         avgtenure = mean(tenure15yrs,na.rm=T),
                                          activeyearend = sum(active2015end,na.rm=T),
                                          sepduringyear = sum(sepduring2015,na.rm=T),
                                          sep_over_hec = sum(sepduring2015,na.rm=T)/(sum(sepduring2015,na.rm=T)+sum(active2015end,na.rm=T))),
               by="bft2015"]
 setnames(dt15bft,"bft2015","utilization")
 dt15ret <- dt[wasapartnerin2015==1, list(benefit = "ret", partnerN = .N,
+                                         avgtenure = mean(tenure15yrs,na.rm=T),
                                          activeyearend = sum(active2015end,na.rm=T),
                                          sepduringyear = sum(sepduring2015,na.rm=T),
                                          sep_over_hec = sum(sepduring2015,na.rm=T)/(sum(sepduring2015,na.rm=T)+sum(active2015end,na.rm=T))),
               by="ret2015"]
 setnames(dt15ret,"ret2015","utilization")
 dt15scap <- dt[wasapartnerin2015==1, list(benefit = "scap", partnerN = .N,
+                                          avgtenure = mean(tenure15yrs,na.rm=T),
                                           activeyearend = sum(active2015end,na.rm=T),
                                           sepduringyear = sum(sepduring2015,na.rm=T),
                                          sep_over_hec = sum(sepduring2015,na.rm=T)/(sum(sepduring2015,na.rm=T)+sum(active2015end,na.rm=T))),
@@ -179,24 +200,28 @@ setnames(dt15scap,"scap2015","utilization")
 
 #2016
 dt16sip <- dt[wasapartnerin2016==1, list(benefit = "sip", partnerN = .N,
+                                         avgtenure = mean(tenure16yrs,na.rm=T),
                                          activeyearend = sum(active2016end,na.rm=T),
                                          sepduringyear = sum(sepduring2016,na.rm=T),
                                          sep_over_hec = sum(sepduring2016,na.rm=T)/(sum(sepduring2016,na.rm=T)+sum(active2016end,na.rm=T))),
               by="sip2016"]
 setnames(dt16sip,"sip2016","utilization")
 dt16bft <- dt[wasapartnerin2016==1, list(benefit = "bft", partnerN = .N,
+                                         avgtenure = mean(tenure16yrs,na.rm=T),
                                          activeyearend = sum(active2016end,na.rm=T),
                                          sepduringyear = sum(sepduring2016,na.rm=T),
                                          sep_over_hec = sum(sepduring2016,na.rm=T)/(sum(sepduring2016,na.rm=T)+sum(active2016end,na.rm=T))),
               by="bft2016"]
 setnames(dt16bft,"bft2016","utilization")
 dt16ret <- dt[wasapartnerin2016==1, list(benefit = "ret", partnerN = .N,
+                                         avgtenure = mean(tenure16yrs,na.rm=T),
                                          activeyearend = sum(active2016end,na.rm=T),
                                          sepduringyear = sum(sepduring2016,na.rm=T),
                                          sep_over_hec = sum(sepduring2016,na.rm=T)/(sum(sepduring2016,na.rm=T)+sum(active2016end,na.rm=T))),
               by="ret2016"]
 setnames(dt16ret,"ret2016","utilization")
 dt16scap <- dt[wasapartnerin2016==1, list(benefit = "scap", partnerN = .N,
+                                          avgtenure = mean(tenure16yrs,na.rm=T),
                                           activeyearend = sum(active2016end,na.rm=T),
                                           sepduringyear = sum(sepduring2016,na.rm=T),
                                           sep_over_hec = sum(sepduring2016,na.rm=T)/(sum(sepduring2016,na.rm=T)+sum(active2016end,na.rm=T))),
@@ -205,24 +230,28 @@ setnames(dt16scap,"scap2016","utilization")
 
 #2017
 dt17sip <- dt[wasapartnerin2017==1, list(benefit = "sip", partnerN = .N,
+                                         avgtenure = mean(tenure17yrs,na.rm=T),
                                          activeyearend = sum(active2017end,na.rm=T),
                                          sepduringyear = sum(sepduring2017,na.rm=T),
                                          sep_over_hec = sum(sepduring2017,na.rm=T)/(sum(sepduring2017,na.rm=T)+sum(active2017end,na.rm=T))),
               by="sip2017"]
 setnames(dt17sip,"sip2017","utilization")
 dt17bft <- dt[wasapartnerin2017==1, list(benefit = "bft", partnerN = .N,
+                                         avgtenure = mean(tenure17yrs,na.rm=T),
                                          activeyearend = sum(active2017end,na.rm=T),
                                          sepduringyear = sum(sepduring2017,na.rm=T),
                                          sep_over_hec = sum(sepduring2017,na.rm=T)/(sum(sepduring2017,na.rm=T)+sum(active2017end,na.rm=T))),
               by="bft2017"]
 setnames(dt17bft,"bft2017","utilization")
 dt17ret <- dt[wasapartnerin2017==1, list(benefit = "ret", partnerN = .N,
+                                         avgtenure = mean(tenure17yrs,na.rm=T),
                                          activeyearend = sum(active2017end,na.rm=T),
                                          sepduringyear = sum(sepduring2017,na.rm=T),
                                          sep_over_hec = sum(sepduring2017,na.rm=T)/(sum(sepduring2017,na.rm=T)+sum(active2017end,na.rm=T))),
               by="ret2017"]
 setnames(dt17ret,"ret2017","utilization")
 dt17scap <- dt[wasapartnerin2017==1, list(benefit = "scap", partnerN = .N,
+                                          avgtenure = mean(tenure17yrs,na.rm=T),
                                           activeyearend = sum(active2017end,na.rm=T),
                                           sepduringyear = sum(sepduring2017,na.rm=T),
                                           sep_over_hec = sum(sepduring2017,na.rm=T)/(sum(sepduring2017,na.rm=T)+sum(active2017end,na.rm=T))),
@@ -237,6 +266,7 @@ dtresults <- rbindlist(l, use.names=T, fill = T)
 
 #aggregate and recalculate sep_over_hec
 dtresults <- dtresults[, list(partnerN = (sum(sepduringyear,na.rm=T)+sum(activeyearend,na.rm=T)),
+                 avgtenure = mean(avgtenure,na.rm=T),
                  activeyearend = sum(activeyearend,na.rm=T),
                  sepduringyear = sum(sepduringyear,na.rm=T),
                  sep_over_hc = sum(sepduringyear,na.rm=T)/(sum(sepduringyear,na.rm=T)+sum(activeyearend,na.rm=T)),
