@@ -248,18 +248,18 @@ dtresults[, eoy_retention := round(eoy_retention,3)*100]
 dtresults <- setorder(dtresults,benefit,utilization)
 
 #write.csv
-write.csv(dtresults,file=paste0(data_dir,"/benefits_terms_results.csv"))
+# write.csv(dtresults,file=paste0(data_dir,"/benefits_terms_results.csv"))
 
 
 #set labels
-xlabels <- c("Health","Retirement","SCAP","Stocks & Investments")
+xlabels <- c("Healthcare\n(16.1% Participation)","Retirement\n(15.3% Participation)","SCAP\n(1.2% Participation)","Stock Investment Plan\n(4.7% Participation)")
 ylabel <- "Annual Retention"
 tlabel <- "Annual Retention by Benefit Utilization"
 sublabel <- "Annualized Results for 2015, 2016, and 2017"
-caption <- "BFT, RET, and SIP: enrolled by end of January at start of year\nSCAP: active participant anytime during year\nActive Partner: end of year"
+caption <- "3-year partner N: 990,401\nAverage tenure among participants, in years: 5.9 (BFT), 5.8 (RET), 2.9 (SCAP), 7.3 (SIP)\nConstruction of measures:\nBFT, RET, and SIP: enrolled by end of January at start of year\nSCAP: active participant anytime during year\nActive partner: end of year"
 #manual legend labels
 lname <- "Benefit Utilization"
-llabels <- c("Did not participate", "Participated")
+llabels <- c("Non-Participant", "Participant")
 #values
 pdata1a <- dtresults
 px1a <- dtresults[,benefit]
