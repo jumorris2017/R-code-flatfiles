@@ -43,101 +43,36 @@ activedt[period17N==0, scap2017 := 0]
 #subset vars
 scap <- activedt[, .(PARTNERID,scap2017)]
 
-#write.csv
-# write.csv(activedt, file="C:/Users/jumorris/Desktop/SCAP_PTF/compiledDT/scap_participants.csv")
-
 #read it back in!
 # scap <- fread("C:/Users/jumorris/Desktop/SCAP_PTF/compiledDT/scap_participants.csv")
 #set names to match benefits data
 setnames(scap,"PARTNERID","PRTNR_ID")
-# #pull year from start_date variable
-# scap[, start_date_scap := substr(start_date,1,4)]
-# #keep just partner number and scap year
-# scap <- scap[, .(PRTNR_ID,start_date_scap)]
-#swing wide
-#create dataset of binary indicators where partners were active in scap
-# scap <- scap %>%
-#   mutate(yesno = 1) %>%
-#   distinct %>%
-#   spread(start_date_scap, yesno, fill = 0)
-# setDT(scap)
-# colnames(scap)[2:ncol(scap)] <- paste0("scap",colnames(scap)[2:ncol(scap)])
 
 #load benefits data
 #only includes januaries.... 
 data_dir <- "O:/CoOp/CoOp194_PROReportng&OM/Julie"
 ben <- fread(paste0(data_dir,"/scap_pnumber_2017start.csv"))
+#ben <- fread(paste0(data_dir,"/scap_pnumber_2017start_extraroles.csv"))
+#ben <- fread(paste0(data_dir,"/scap_pnumber_2017start_allUS.csv"))
 setnames(ben,"Personnel Number","PRTNR_ID")
 ben2 <- fread(paste0(data_dir,"/scap_pnumber_2017end.csv"))
+#ben2 <- fread(paste0(data_dir,"/scap_pnumber_2017end_extraroles.csv"))
+#ben2 <- fread(paste0(data_dir,"/scap_pnumber_2017end_allUS.csv"))
 ben2[, activeforsure := 1]
 setnames(ben2,"Personnel Number","PRTNR_ID")
 ben2 <- ben2[, .(PRTNR_ID,activeforsure)]
 ben <- left_join(ben,ben2,by="PRTNR_ID")
-#order by FP_End
-#order by FP_End
-# ben <- setorder(ben,FP_End)
-# ben[, fpend := mdy(FP_End)]
-# ben[, fpyear := year(fpend)]
-# 
-# #restrict to only BFT eligible partners
-# # ben <- ben[BFT_Elig==1]
-# 
-# #keep only 2017 data
-# ben <- ben[fpyear==2017]
-
-# #just keep benefits participation variables
-# 
-# #create dataset of binary indicators where partners were active participants
-# bsipdt <- dcast.data.table(ben, PRTNR_ID ~ fpyear, value.var="SIP_Part", fun.aggregate=max)
-# colnames(bsipdt)[2:ncol(bsipdt)] <- paste0("sip",colnames(bsipdt)[2:ncol(bsipdt)])
-# 
-# bbftdt <- dcast.data.table(ben, PRTNR_ID ~ fpyear, value.var="BFT_Part", fun.aggregate=max)
-# colnames(bbftdt)[2:ncol(bbftdt)] <- paste0("bft",colnames(bbftdt)[2:ncol(bbftdt)])
-# 
-# bretdt <- dcast.data.table(ben, PRTNR_ID ~ fpyear, value.var="RET_Part", fun.aggregate=max)
-# colnames(bretdt)[2:ncol(bretdt)] <- paste0("ret",colnames(bretdt)[2:ncol(bretdt)])
-# 
-# #merge together
-# bendt <- Reduce(function(x, y) {merge(x, y, by=c("PRTNR_ID"), all=T)}, list(bsipdt,bbftdt,bretdt))
-# 
-# #grab start date & remove name character components
-# bendt[, start_date_sip := colnames(.SD)[max.col(.SD, ties.method="first")], .SDcols = grep("sip",colnames(bendt),value=T)]
-# bendt[, start_date_sip := gsub("sip", "", bendt[, start_date_sip])]
-# bendt[sip2015==0&sip2016==0&sip2017==0&sip2018==0, start_date_sip := NA]
-# bendt[, start_date_bft := colnames(.SD)[max.col(.SD, ties.method="first")], .SDcols = grep("bft",colnames(bendt),value=T)]
-# bendt[, start_date_bft := gsub("bft", "", bendt[, start_date_bft])]
-# bendt[bft2015==0&bft2016==0&bft2017==0&bft2018==0, start_date_bft := NA]
-# bendt[, start_date_ret := colnames(.SD)[max.col(.SD, ties.method="first")], .SDcols = grep("ret",colnames(bendt),value=T)]
-# bendt[, start_date_ret := gsub("ret", "", bendt[, start_date_ret])]
-# bendt[ret2015==0&ret2016==0&ret2017==0&ret2018==0, start_date_ret := NA]
 
 #load turnover data
 prtnr <- fread(paste0(data_dir,"/SCAP_analysis_partner_file.csv"))
 #set names to match benefits data
 prtnr[, (grep("DT",colnames(prtnr),value=T)) := lapply(.SD, function(x) lubridate::mdy_hm(x)), .SDcols=grep("DT",colnames(prtnr),value=T)]
 
-#RESTRICT BY JOB ROLE
-# prtnr <- prtnr[JOB_ID==50000362] #BARISTA
-# prtnr <- prtnr[JOB_ID==50000358] #SHIFT
-# prtnr <- prtnr[JOB_ID==50000117] #SM
 
 #join scap data
 fulldt <- Reduce(function(x,y){merge(x,y,by="PRTNR_ID",all=T)}, list(prtnr,scap))
 fulldt <- left_join(ben,fulldt,by="PRTNR_ID")
 setDT(fulldt)
-
-# #make separation date NA if still active (happens for multiple-hires)
-# fulldt[EMP_STAT_CD=="Active", SEPARATION_DT := NA]
-# 
-# #create indicators for whether still an active partner at end of year
-# #2017
-# fulldt[MOST_RECENT_HIRE_DT<='2017-12-31', active2017end := 0] #put 0's for relevant partners
-# fulldt[MOST_RECENT_HIRE_DT<='2017-12-31'&EMP_STAT_CD=="Active", active2017end := 1]
-# fulldt[MOST_RECENT_HIRE_DT<='2017-12-31'&EMP_STAT_CD=="Separated"&
-#          SEPARATION_DT>='2018-01-01', active2017end := 1]
-# fulldt[MOST_RECENT_HIRE_DT<='2017-12-31', sepduring2017 := 0] #put 0's for relevant partners
-# fulldt[MOST_RECENT_HIRE_DT<='2017-12-31'&EMP_STAT_CD=="Separated"&
-#          (SEPARATION_DT>='2017-01-01'&SEPARATION_DT<='2017-12-31'), sepduring2017 := 1]
 
 #keep a subset
 dt <- fulldt[, .(PRTNR_ID, activeforsure, 
@@ -149,24 +84,13 @@ dt[active2017end==1, sepduring2017 := 1]
 
 # dt[active2017end==1|sepduring2017==1, wasapartnerin2017 := 1];dt[active2017end==0&sepduring2017==0, wasapartnerin2017 := 0]
 setnames(dt, c("SIP_Part", "BFT_Part", "RET_Part"), c("sip2017","bft2017","ret2017"))
-#keep only rows where partners were active in years of analysis (2017)
-# dt <- dt[wasapartnerin2017==1]
-# #drop separation date since it's causing issues...
-# dt[, SEPARATION_DT := NULL]
+
 #turn NA's to 0's
 dt[is.na(dt)] <- 0
 
 #get rid of 0's
-dt <- dt[JOB_ID>1]
+#dt <- dt[JOB_ID>1]
 
-# #tenure on dec 31, 2017
-# dt[, hiredate := as.Date(MOST_RECENT_HIRE_DT)]
-# dt[wasapartnerin2017==1, tempdt := as.Date(ymd('2017-12-25'))]
-# dt[wasapartnerin2017==1, tenure17yrs := as.numeric(difftime(tempdt, hiredate), units = c("days"))]
-# dt[wasapartnerin2017==1, tenure17yrs := round(tenure17yrs/365,1)]
-# #remove fake var
-# # dt[, tempdt := NULL]
-# # # 
 # #pull in pulse data
 pulse <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/SCAP_pulse_cal2017.csv")
 setnames(pulse,"SAP_PRTNR_ID","PRTNR_ID")
@@ -352,51 +276,6 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
 print(plot1a)
 
 
-# ####BARISTA
-# #set labels
-# xlabels <- c("Healthcare\n(19.2% Participation)","Retirement\n(17.6% Participation)","SCAP\n(4.8% Participation)","Stock Investment Plan\n(4.1% Participation)")
-# ylabel <- "2017 Retention"
-# tlabel <- "Annual Retention by Benefit Utilization"
-# sublabel <- "U.S. Company-Operated Store Partners"
-# #manual legend labels
-# lname <- "Benefit Utilization"
-# llabels <- c("Non-Participant", "Participant")
-# #values
-# pdata1a <- dtresults[JOB_ID==50000362]
-# px1a <- dtresults[JOB_ID==50000362,benefit]
-# py1a <- dtresults[JOB_ID==50000362,eoy_retention]
-# groupvar1a <- dtresults[JOB_ID==50000362,utilization]
-# #plot itself
-# plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
-#   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-#   scale_fill_brewer(palette = 2, guide=FALSE) + theme_economist() +
-#   scale_x_discrete(name="",labels=xlabels) +
-#   scale_y_continuous(limits=c(0,100)) +
-#   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel) +
-#   geom_text(size = 3.5, aes(label=paste0(py1a,"%"),y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
-# print(plot1a)
-# 
-# 
-
-# #sm
-# dtp_sm <- dtp
-# dtp_sm <- dtp_sm[, .(benefit,parpct)]
-# dtp_sm[, role := "sm"]
-# #shift
-# dtp_ss <- dtp
-# dtp_ss <- dtp_ss[, .(benefit,parpct)]
-# dtp_ss[, role := "sh"]
-# #barista
-# dtp_bar <- dtp
-# dtp_bar <- dtp_bar[, .(benefit,parpct)]
-# dtp_bar[, role := "bar"]
-
-# #rbind
-# l = list(dtp_sm,dtp_ss,dtp_bar)
-# dtpfull <- rbindlist(l,use.names=T,fill=T)
-# dtpfull[, parpct := round(parpct,3)*100]
-# dtpfull <- setorder(dtpfull,benefit,role)
-
 #hard code from query data
 dtp[benefit=="bft"&JOB_ID==50000362, parpct := round(22756/118273,3)*100]
 dtp[benefit=="bft"&JOB_ID==50000358, parpct := round(19648/35540,3)*100]
@@ -445,15 +324,6 @@ print(plot1a)
 
 
 
-
-
-
-
-
-
-
-
-
 #hard code from query data
 dtp[benefit=="bft"&JOB_ID==50000362, parpct := 33.4]
 dtp[benefit=="bft"&JOB_ID==50000358, parpct := 58.1]
@@ -463,7 +333,7 @@ dtp[benefit=="ret"&JOB_ID==50000362, parpct := 31.6]
 dtp[benefit=="ret"&JOB_ID==50000358, parpct := 50.4]
 dtp[benefit=="ret"&JOB_ID==50000117, parpct := 77.7]
 
-dtp[benefit=="sip"&JOB_ID==50000362, parpct := ]6.7
+dtp[benefit=="sip"&JOB_ID==50000362, parpct := 4.9]
 dtp[benefit=="sip"&JOB_ID==50000358, parpct := 13.5]
 dtp[benefit=="sip"&JOB_ID==50000117, parpct := 29.1]
 
@@ -501,10 +371,6 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   geom_text(size = 2.5, aes(label=paste0("n=",nvar),y=0), stat="identity", vjust = -0.5, position = position_dodge(0.95)) +
   geom_text(size = 3.5, aes(label=paste0(py1a,"%")), stat="identity", vjust = -1, position = position_dodge(0.95)) 
 print(plot1a)
-
-
-
-
 
 
 #create new only/both variables
@@ -605,4 +471,15 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
 print(plot1a)
 
 
+
+#total proportion
+dtagg <- dt[, list(partnerN = .N,
+                   sip2017 = sum(sip2017,na.rm=T),
+                   bft2017 = sum(bft2017,na.rm=T),
+                   ret2017 = sum(ret2017,na.rm=T),
+                   scap2017 = sum(scap2017,na.rm=T))]
+dtagg[, sippct := round(sip2017/partnerN,4)*100]
+dtagg[, bftpct := round(bft2017/partnerN,4)*100]
+dtagg[, retpct := round(ret2017/partnerN,4)*100]
+dtagg[, scappct := round(scap2017/partnerN,4)*100]
 
