@@ -1,14 +1,26 @@
 ###SESSION 1: Hello, R! Data exploration!
 
-#download data
+#install packages: only need to *install* a package once, but then must load it with each new R session
+install.packages("data.table")
+#load your package:
+library(data.table)
+
+#download data: normally, you won't be downloaded data; you'll be importing it
+#but for today, let's all work with the same data
 data(mtcars)
-#assign as data.table
+#what class is "mtcars"?
+class(mtcars)
+#we want to work with a data.table, so let's reassign our data as a data.table
+#why? data.tables are: computationally faster, and have a cleaner coding style
 setDT(mtcars, keep.rownames = T) 
 
-#expore your data
-View(mtcars) #opens up data.table in viewing window
+#time to expore your data!
+#see your data
 head(mtcars) #shows first 6 rows (6 = default)
 head(mtcars, 10) #shows first 10 rows (can set this to any number!)
+#if you're used to looking at your data in a spreadsheet format, you can!
+View(mtcars) #opens up data.table in viewing window
+#summarize & understand you data
 summary(mtcars) #statistical summary of your data
 class(mtcars) #class of your data
 ls(mtcars) #lists the elements of your data
@@ -69,6 +81,7 @@ plot(mtcars[,hp],mtcars[,mpg], main="Scatterplot of Horsepower and MPGs",
 abline(lm(mpg ~ hp, data=mtcars))
 
 #is there a linear relationship..?
+#notice what happens in the "Global Environment" when you do this
 linear_model1 <- lm(mpg ~ hp, data=mtcars)
 summary(linear_model1)
 
@@ -78,7 +91,7 @@ mean(mtcars[high_mpg==0, hp])
 mean(mtcars[high_mpg==1, hp])
 #can we do this in one step instead of two?
 mtcars[, mean(hp), by="high_mpg"]
-#are these statistically different?
+#are the horsepowers of these mpg groups statistically different?
 t.test(mtcars[high_mpg==0, hp], mtcars[high_mpg==1, hp])
 
 #let's create a new variable of the average mpg per hp
@@ -86,18 +99,26 @@ mtcars[, mpg_per_hp := mpg/hp]
 summary(mtcars[,mpg_per_hp])
 head(mtcars[,mpg_per_hp])
 head(mtcars)
-#oof! long numbers... let's round them
+#oof! long numbers... let's try this again, but with rounding them
 mtcars[, mpg_per_hp := round(mpg/hp,3)]
+#let's see if that looks better
+head(mtcars)
+#if the variable is already created, you could do this instead:
+#mtcars[, mpg_per_hp := round(mpg_per_hp,3)]
 
 #sometimes you want a smaller data.table. let's restrict mtcars to only 2 variables
+#notice what happens in the "Global Environment" when you do this
 mtcars_small <- mtcars[, .(rn, wt)]
 #let's square the weight variable
 mtcars_small[, wt := wt^2]
 #now let's rename it
 setnames(mtcars_small,"wt","wtsquared")
+#notice this *replaces* the original "wt" variable. we could (should) have made a *new* variable:
+#mtcars_small[, wtsquared := wt^2]
 
-#let's merge our data.table with the weight-squared variable into the full mtcars data
-mtcars <- merge(mtcars, mtcars_small, by="rn")
+#let's say we want to merge two data.tables together. how?
+#well, let's merge our "mtcars_small" data.table into the full "mtcars" data
+mtcars <- merge(mtcars, mtcars_small, by="rn") #"rn" is their link/id variable
 
 #merge function: additional arguments
 # merge(mtcars, mtcars_small, by=c("rn","id_var_2","id_var_3"), all=TRUE) # more than 1 identifier variable; outer join
@@ -105,6 +126,7 @@ mtcars <- merge(mtcars, mtcars_small, by="rn")
 # merge(mtcars, mtcars_small, by="rn", all.y=TRUE) #right join
 
 #let's make a data.table with 3 variables we want to correlate
+#notice what happens in the "Global Environment" when you do this
 mtcars_cor <- mtcars[, .(mpg, cyl, hp)]
 #let's rename two of them
 setnames(mtcars_cor,c("cyl","hp"),c("cylinders","horsepower"))
@@ -117,12 +139,15 @@ write.csv(mtcars, file="C:/Users/jumorris/mtcars_data.csv")
 
 ###SESSION 2: Functions! Aggregation! 
 
+#clear your workspace
+rm(list=ls())
+
 #read in your data from last time
-mydata <- fread("C:/Users/jumorris/mtcars_data.csv")
+mtcars <- fread("C:/Users/jumorris/mtcars_data.csv")
 #look at your data
-head(mydata)
+head(mtcars)
 #there's a row number variable in there! let's get rid of it
-mydata[, V1 := NULL]
+mtcars[, V1 := NULL]
 
 #let's talk about functions
 #we have already used lots of functions
@@ -209,21 +234,31 @@ mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T),
 #                      by=c("high_mpg","grouping_var_2"), 
 #                      .SDcols=colnames(mtcars)[2:12]]
 #what if we wanted to build out a specific aggregated data.table (i.e., not just *all* means)?
+#notice what happens in the "Global Environment" when you do this
 mtcars_agg2 <- mtcars[, list(carN = .N,
                              avg_mpg = mean(mpg, na.rm=T),
                              max_wt = max(wt, na.rm=T),
                              min_gear = min(gear, na.rm=T),
                              sum_of_gear_column = sum(gear, na.rm=T)),
                       by=c("high_mpg")]
-
+#look at the result
+#so far, we've been using "head()" to look at the first 6 rows of our data, but
+#here, we know the data will only have 2 rows, so let's view it all! head() works too :)
+mtcars_agg2
 #why do I keep specifying "na.rm = T" (TRUE)?
 #let's test it: let's change on value in the gear column to NA
-mtcars <- mtcars[rn=="AMC Javelin", gear := NA]
-mtcars_agg2 <- mtcars[, list(carN = .N,
+#notice what happens in the "Global Environment" when you do this
+mtcars_withNA <- mtcars[rn=="AMC Javelin", gear := NA]
+#let's see what that did
+mtcars_withNA[rn=="AMC Javelin"]
+#now, try the aggregation again, but without the na.rm=T specification
+#notice what happens in the "Global Environment" when you do this
+mtcars_agg3 <- mtcars_withNA[, list(carN = .N,
                              avg_mpg = mean(mpg),
                              max_wt = max(wt),
                              min_gear = min(gear),
                              sum_of_gear_column = sum(gear)),
                       by=c("high_mpg")]
-
+#look at the result
+mtcars_agg3
 
