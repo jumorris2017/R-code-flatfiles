@@ -13,6 +13,7 @@ class(mtcars)
 #we want to work with a data.table, so let's reassign our data as a data.table
 #why? data.tables are: computationally faster, and have a cleaner coding style
 setDT(mtcars, keep.rownames = T) 
+#where applicable, comments below each command show how to run the same operation using base R
 
 #time to expore your data!
 #see your data
@@ -41,81 +42,117 @@ mtcars[1,1]
 #why do these give you the same summary values?
 summary(mtcars[,2])
 summary(mtcars[,mpg])
+#Base R notation is dataset$variable
+#summary(mtcars$mpg)
 
 #visually explore the distribution of MPG
 hist(mtcars[,mpg])
+#hist(mtcars$mpg)
 #well, that's ugly! 
 hist(mtcars[,mpg], main="Histogram of Miles per Gallon", 
      xlab="MPG", 
      ylab="Number of Cars",
-     breaks=15)
+     breaks=10)
+#hist(mtcars$mpg, main="Histogram of Miles per Gallon", 
+#     xlab="MPG", 
+#     ylab="Number of Cars",
+#     breaks=10)
 
 #let's analyze our cars by those that are "high" versus "low" fuel efficiency
 #how many cars in our data get less than (or equal to) 20 mpg?
-nrow(mtcars[mpg<=20,])
+nrow(mtcars[mpg<=20])
+#nrow(mtcars[mtcars$mpg<=20])
 #how many cars in our data get over 20 mpg?
-nrow(mtcars[mpg>20,])
+nrow(mtcars[mpg>20])
+#nrow(mtcars[mtcars$mpg>20])
 
 #let's create a new binary variable differentiaing these cars
 mtcars[mpg<=20, high_mpg := 0]
 mtcars[mpg>20, high_mpg := 1]
+#mtcars$high_mpg[mtcars$mpg<=20] <- 0
+#mtcars$high_mpg[mtcars$mpg>20] <- 1
 
 #let's check our work
 #get counts by one variable
 mtcars[, .N, by="high_mpg"]
+#table(mtcars$high_mpg)
 #get counts by two variables
 mtcars[, .N, by=c("high_mpg","mpg")]
+#table(mtcars$high_mpg, mtcars$mpg)
 #get proportions by one variable
 mtcars[, .N/nrow(mtcars), by="high_mpg"]
+#prop.table(table(mtcars$high_mpg))
 #get proportions by two variables
 mtcars[, .N/nrow(mtcars), by=c("high_mpg","mpg")]
+#prop.table(table(mtcars$high_mpg, mtcars$mpg))
 
 #data exploration: bivariate
 #how are mpgs and horsepower related?
 plot(mtcars[,hp],mtcars[,mpg])
+#plot(mtcars$hp, mtcars$mpg)
 #well that's ugly!
 plot(mtcars[,hp],mtcars[,mpg], main="Scatterplot of Horsepower and MPGs",
      xlab="Horsepower",
      ylab="Miles per Gallon")
+#plot(mtcars$hp, mtcars$mpg, main="Scatterplot of Horsepower and MPGs",
+#     xlab="Horsepower",
+#     ylab="Miles per Gallon")
 #let's add a linear regression line to get a quick visual check on the relationship
 abline(lm(mpg ~ hp, data=mtcars))
 
 #is there a linear relationship..?
 #notice what happens in the "Global Environment" when you do this
-linear_model2 <- lm(mpg ~ hp + drat + wt + cyl, data=mtcars)
-summary(linear_model2)
+linear_model1 <- lm(mpg ~ hp, data=mtcars)
+summary(linear_model1)
 
 #what's the average hp of low mpg cars?
 mean(mtcars[high_mpg==0, hp])
+#mean(mtcars$hp[mtcars$high_mpg == 0])
 #and high?
 mean(mtcars[high_mpg==1, hp])
+#mean(mtcars$hp[mtcars$high_mpg == 1])
 #can we do this in one step instead of two?
 mtcars[, mean(hp), by="high_mpg"]
+#There's a package called dplyr that is great for this
+#install.packages("dplyr")
+#library(dplyr)
+#mtcars %>% 
+#  group_by(high_mpg) %>% 
+#  summarise(mean.hp=mean(hp))
 #are the horsepowers of these mpg groups statistically different?
 t.test(mtcars[high_mpg==0, hp], mtcars[high_mpg==1, hp])
-t.test(hp ~ high_mpg, data=mtcars)
+#t.test(hp ~ high_mpg, data=mtcars)
 
 #let's create a new variable of the average mpg per hp
 mtcars[, mpg_per_hp := mpg/hp]
+#mtcars$mpg_per_hp <- mtcars$mpg/mtcars$hp
 summary(mtcars[,mpg_per_hp])
+#summary(mtcars$mpg_per_hp)
 head(mtcars[,mpg_per_hp])
+#head(mtcars$mpg_per_hp)
 head(mtcars)
 #oof! long numbers... let's try this again, but with rounding them
 mtcars[, mpg_per_hp := round(mpg/hp,3)]
+#mtcars$mpg_per_hp <- round(mtcars$mpg/mtcars$hp,3)
 #let's see if that looks better
 head(mtcars)
 #if the variable is already created, you could do this instead:
 #mtcars[, mpg_per_hp := round(mpg_per_hp,3)]
+#mtcars$mpg_per_hp <- round(mtcars$mpg_per_hp, 3)
 
 #sometimes you want a smaller data.table. let's restrict mtcars to only 2 variables
 #notice what happens in the "Global Environment" when you do this
 mtcars_small <- mtcars[, .(rn, wt)]
+#mtcars_small <- mtcars[, c("rn", "wt")]
 #let's square the weight variable
 mtcars_small[, wt := wt^2]
+#mtcars_small2$wt <- mtcars_small2$wt^2
 #now let's rename it
 setnames(mtcars_small,"wt","wtsquared")
+#names(mtcars_small)[names(mtcars_small)=="wt"] <- "wtsquared"
 #notice this *replaces* the original "wt" variable. we could (should) have made a *new* variable:
 #mtcars_small[, wtsquared := wt^2]
+#mtcars_small$wtsquared <- mtcars_small$wt^2
 
 #let's say we want to merge two data.tables together. how?
 #well, let's merge our "mtcars_small" data.table into the full "mtcars" data
@@ -129,8 +166,11 @@ mtcars <- merge(mtcars, mtcars_small, by="rn") #"rn" is their link/id variable
 #let's make a data.table with 3 variables we want to correlate
 #notice what happens in the "Global Environment" when you do this
 mtcars_cor <- mtcars[, .(mpg, cyl, hp)]
+#mtcars_cor <- mtcars[, c("mpg", "cyl", "hp")]
 #let's rename two of them
 setnames(mtcars_cor,c("cyl","hp"),c("cylinders","horsepower"))
+#names(mtcars_cor)[names(mtcars_cor)=="cyl"] <- "cylinders"
+#names(mtcars_cor)[names(mtcars_cor)=="hp"] <- "horsepower"
 #corelation matrix
 cor(mtcars_cor)
 
@@ -144,7 +184,7 @@ write.csv(mtcars, file="C:/Users/jumorris/mtcars_data.csv")
 rm(list=ls())
 
 #read in your data from last time
-mtcars <- read.csv("C:/Users/jumorris/mtcars_data.csv")
+mtcars <- fread("C:/Users/jumorris/mtcars_data.csv")
 #look at your data
 head(mtcars)
 #there's a row number variable in there! let's get rid of it
