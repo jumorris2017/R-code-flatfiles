@@ -4,7 +4,7 @@
 ##Author: Julie Morris
 
 ##load libraries
-library(foreign)
+library(foreign) #read.spss
 library(data.table)
 library(ggplot2)
 library(gridExtra)
