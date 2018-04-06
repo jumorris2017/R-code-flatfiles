@@ -115,10 +115,11 @@ mean(mtcars[high_mpg==1, hp])
 mtcars[, mean(hp), by="high_mpg"]
 #There's a package called dplyr that is great for this
 #install.packages("dplyr")
-#library(dplyr)
-#mtcars %>% 
-#  group_by(high_mpg) %>% 
-#  summarise(mean.hp=mean(hp))
+library(dplyr)
+mtcars %>%
+  filter(rn="AMC Javelin") %>%
+ group_by(high_mpg,other_thing) %>%
+ mutate(mean.hp=mean(hp),sum.hp=sum(hp))
 #are the horsepowers of these mpg groups statistically different?
 t.test(mtcars[high_mpg==0, hp], mtcars[high_mpg==1, hp])
 #t.test(hp ~ high_mpg, data=mtcars)
@@ -256,24 +257,24 @@ mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T),
 #                      .SDcols=c("mpg","cyl","disp","hp","drat","wt","qsec","vs","am","gear","carb")]
 # #same thing, but using a vector of the column names
 # #make of vector of the column names:
-# colvector <- colnames(mtcars)[2:12]
-# #look at your vector
-# colvector
-# mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T),
-#                      by="high_mpg",
-#                      .SDcols=colvector]
+colvector <- colnames(mtcars)[2:12]
+#look at your vector
+colvector
+mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T),
+                     by="high_mpg",
+                     .SDcols=colvector]
 # #same thing, but specifying a function:
-# mtcars_agg <- mtcars[, lapply(.SD, function(x) mean(x, na.rm=T)), 
-#                      by="high_mpg", 
-#                      .SDcols=colnames(mtcars)[2:12]]
+mtcars_agg <- mtcars[, lapply(.SD, function(x) mean(x, na.rm=T)),
+                     by="high_mpg",
+                     .SDcols=colnames(mtcars)[2:12]]
 # #same thing, but rounding our results:
-# mtcars_agg <- mtcars[, lapply(.SD, function(x) round(mean(x, na.rm=T),3)), 
-#                      by="high_mpg", 
-#                      .SDcols=colnames(mtcars)[2:12]]
+mtcars_agg <- mtcars[, lapply(.SD, function(x) round(mean(x, na.rm=T),3)),
+                     by="high_mpg",
+                     .SDcols=colnames(mtcars)[2:12]]
 # #same thing, but with more than one grouping variable
-# mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T), 
-#                      by=c("high_mpg","grouping_var_2"), 
-#                      .SDcols=colnames(mtcars)[2:12]]
+mtcars_agg <- mtcars[, lapply(.SD, mean, na.rm=T),
+                     by=c("high_mpg","grouping_var_2"),
+                     .SDcols=colnames(mtcars)[2:12]]
 #what if we wanted to build out a specific aggregated data.table (i.e., not just *all* means)?
 #notice what happens in the "Global Environment" when you do this
 mtcars_agg2 <- mtcars[, list(carN = .N,
