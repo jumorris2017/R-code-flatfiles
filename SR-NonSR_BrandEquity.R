@@ -9,7 +9,7 @@ library(ggthemes)
 library(patchwork)
 
 #load data
-be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
+be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0 US Retail/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
 #convert to data.table
 setDT(be)
 
@@ -110,7 +110,7 @@ nvar1a <- tempbe[,n]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
@@ -138,7 +138,7 @@ nvar1b <- ce[,USER_COUNT]
 #plot itself
 plot1b <- ggplot(data=pdata1b,aes(y=py1b,x=as.factor(px1b),fill=as.factor(groupvar1b))) + 
   geom_bar(stat="identity", width = .7, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1b,y=0), stat="identity", vjust = -2, position = position_dodge(0.7)) +
@@ -175,7 +175,7 @@ groupvar2 <- meltbe[ProvenSR==0,vis_bin]
 #plot itself
 plot2 <- ggplot(data=pdata2,aes(y=py2,x=as.factor(px2),fill=as.factor(groupvar2))) + 
   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name=xlabel,labels=xlabels) +
   ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel) +
   geom_text(size = 2.5, aes(label=py2,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
@@ -192,7 +192,7 @@ groupvar3 <- meltbe[ProvenSR==1,vis_bin]
 #plot itself
 plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3))) + 
   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, guide=FALSE) + theme_economist() +
+  scale_fill_brewer(palette = 1, guide=FALSE) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name=xlabel,labels=xlabels) +
   xlab(xlabel) + ylab(ylabel) + labs(caption=caption) +
   geom_text(size = 2.5, aes(label=py3,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
@@ -215,7 +215,7 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
 # #plot itself
 # plot4 <- ggplot(data=pdata4,aes(y=py4,x=as.factor(px4),fill=as.factor(groupvar4))) + 
 #   geom_bar(stat="identity", width = 0.7, position=position_dodge(), colour="black") +
-#   scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+#   scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
 #   scale_x_discrete(name=xlabel,labels=xlabels) +
 #   ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
 #   geom_text(size = 2.5, aes(label=py4,y=0), angle=90, hjust=-0.25, stat="identity", position = position_dodge(0.7))
@@ -283,7 +283,7 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
 #   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
 #   guides(colour = guide_legend(override.aes = list(size = 7))) + 
 #   #scale_x_continuous(limits=c(pdata[,min(px)],pdata[,max(px)]), breaks = scales::pretty_breaks(n = ybreaks), labels = waiver()) +
-#   scale_y_continuous(limits=c(0,pdata[,max(py)])) + theme_economist() +
+#   scale_y_continuous(limits=c(0,pdata[,max(py)])) + theme_economist_white(gray_bg = FALSE) +
 #   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 # print(plot2)
 # 
@@ -296,7 +296,7 @@ plot3 <- ggplot(data=pdata3,aes(y=py3,x=as.factor(px3),fill=as.factor(groupvar3)
 # ##UPDATE TO INCLUDE TRENDED CC BY FREQUENCY BINS & ROLLING 2-MONTHS
 
 #load data
-be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
+be <- read.spss("//starbucks/amer/portal/Departments/WMO/Marketing Research/New Q drive/Foundational/Brand Equity Monitor/$ Brand Equity 2.0 US Retail/SPSS/DEC FY18 Final.sav", use.value.labels = FALSE, to.data.frame=TRUE)
 #convert to data.table
 setDT(be)
 
@@ -428,7 +428,7 @@ plot2 <- ggplot(data=pdata, aes(x=px, y=py, colour=factor(colourvar), shape=fact
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
   scale_shape_discrete(name=lname2, labels=llabels2, guide=guide_legend(order=1)) +
   guides(shape = guide_legend(override.aes = list(size = 5))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
@@ -453,7 +453,7 @@ plot2 <- ggplot() +
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
@@ -478,7 +478,7 @@ plot2 <- ggplot() +
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
@@ -503,7 +503,7 @@ plot2 <- ggplot() +
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
@@ -528,7 +528,7 @@ plot2 <- ggplot() +
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
@@ -551,7 +551,7 @@ plot3 <- ggplot(data=pdata, aes(x=px, y=py, group=factor(groupvar), colour=facto
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname2, labels=llabels2, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 5))) + 
-  scale_y_continuous(limits=c(0,0.6)) + theme_economist() +
+  scale_y_continuous(limits=c(0,0.6)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel)
 print(plot3)
 
@@ -669,7 +669,7 @@ groupvar1a <- ccm[,age_cat]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -718,7 +718,7 @@ groupvar1a <- ccm[,female]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -767,7 +767,7 @@ groupvar1a <- ccm[,collegegrad]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -816,7 +816,7 @@ groupvar1a <- ccm[,married]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -866,7 +866,7 @@ groupvar1a <- ccm[,inc_75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -923,7 +923,7 @@ groupvar1a <- ccm[,cg_inc75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) + 
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -977,7 +977,7 @@ groupvar1a <- ccm[,cg_inc75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) + 
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -1030,7 +1030,7 @@ groupvar1a <- ccm[,cg_inc75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) + 
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -1083,7 +1083,7 @@ groupvar1a <- ccm[,cg_inc75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) + 
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -1137,7 +1137,7 @@ groupvar1a <- ccm[,cg_inc75k]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) + 
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
@@ -1190,7 +1190,7 @@ groupvar1a <- ccm[,fem_agecat]
 #plot itself
 plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupvar1a))) + 
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
-  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist() +
+  scale_fill_brewer(palette = 2, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -1, position = position_dodge(0.95)) 
