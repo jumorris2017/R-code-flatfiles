@@ -445,7 +445,7 @@ llabels <- c("Brand Equity: Non-SR","Brand Equity: SR","Customer Experience Surv
 #values
 pdata <- cebe[vis_bin==1]
 px <- cebe[vis_bin==1,fyfp]
-py <- cebe[vis_bin==1,tb_score]
+py <- cebe[vis_bin==1,tb_score*100]
 groupvar <- cebe[vis_bin==1,ProvenSR]
 #plot itself
 plot2 <- ggplot() +
@@ -453,7 +453,7 @@ plot2 <- ggplot() +
   xlab("") + ylab(ylabel) + 
   scale_colour_discrete(name=lname, labels=llabels, guide=guide_legend(order=1)) +
   guides(colour = guide_legend(override.aes = list(size = 7))) + 
-  scale_y_continuous(limits=c(0,.6)) + theme_economist_white(gray_bg = FALSE) +
+  scale_y_continuous(limits=c(0,40)) + theme_economist_white(gray_bg = FALSE) +
   ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption)
 print(plot2)
 
