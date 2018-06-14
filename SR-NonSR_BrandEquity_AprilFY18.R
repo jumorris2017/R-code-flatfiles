@@ -65,6 +65,7 @@ tempbe <- be %>%
             Q2_8_score = round(mean(Q2_8_score,na.rm=T)*100,1), #worth
             n = n())
 setDT(tempbe)
+tempbe <- tempbe[!is.na(ProvenSR)&!is.na(vis_bin)]
 
 #bring in our data
 ce <- fread("O:/CoOp/CoOp194_PROReportng&OM/Julie/ce_by_customer_frequency_v2.csv")
@@ -99,9 +100,10 @@ xlabels <- c("Non-SR","SR")
 ylabel <- "CC Score"
 tlabel <- "Brand Equity Study"
 sublabel <- "Customer Connection"
-caption <- "Brand Equity Study, December FY18"
+caption <- "Brand Equity Study, April FY18"
 #manual legend labels
 lname <- "30-Day Visitation"
+# llabels <- c("1-5", "6-10", "11-15", "16-20", "21-25", "26+")
 llabels <- c("1-5", "6-10", "11-15", "16+")
 #values
 pdata1a <- tempbe
@@ -114,6 +116,7 @@ plot1a <- ggplot(data=pdata1a,aes(y=py1a,x=as.factor(px1a),fill=as.factor(groupv
   geom_bar(stat="identity", width = 0.95, position=position_dodge(), colour="black") +
   scale_fill_brewer(palette = 1, name=lname, labels=llabels) + theme_economist_white(gray_bg = FALSE) +
   scale_x_discrete(name="",labels=xlabels) +
+  scale_y_continuous(limits=c(0,50)) +
   xlab("") + ylab(ylabel) + ggtitle(tlabel) + labs(subtitle=sublabel,caption=caption) +
   geom_text(size = 3.5, aes(label=py1a,y=0), stat="identity", vjust = -2, position = position_dodge(0.95)) +
   geom_text(size = 2.5, aes(label=paste0("n=",nvar1a),y=0), stat= "identity", vjust = -1, position = position_dodge(0.95)) 
